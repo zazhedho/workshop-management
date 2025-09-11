@@ -9,8 +9,9 @@ import (
 	"os"
 	"strings"
 	"time"
+	_ "workshop-management/docs"
 	"workshop-management/infrastructure/database"
-	"workshop-management/internal/handler/http"
+	"workshop-management/internal/handler"
 	"workshop-management/pkg/config"
 	"workshop-management/pkg/logger"
 	"workshop-management/utils"
@@ -88,7 +89,7 @@ func main() {
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("ConfigID: %s", confID))
 
 	runMigration()
-	routes := http.NewRoutes()
+	routes := handler.NewRoutes()
 
 	routes.DB, sqlDb, err = database.ConnDb()
 	FailOnError(err, "Failed to open db")

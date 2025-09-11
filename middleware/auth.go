@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"workshop-management/internal/repository/auth"
+	"slices"
+	"workshop-management/internal/domain/auth"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/response"
 	"workshop-management/utils"
@@ -16,11 +17,11 @@ import (
 
 // Middleware struct to hold dependencies
 type Middleware struct {
-	BlacklistRepo auth.Blacklist
+	BlacklistRepo auth.Repository
 }
 
 // NewMiddleware creates a new middleware with its dependencies
-func NewMiddleware(blacklistRepo auth.Blacklist) *Middleware {
+func NewMiddleware(blacklistRepo auth.Repository) *Middleware {
 	return &Middleware{
 		BlacklistRepo: blacklistRepo,
 	}
@@ -69,6 +70,48 @@ func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 
 		ctx.Set(utils.CtxKeyAuthData, dataJWT)
 		ctx.Set("token", tokenString)
+
+		ctx.Next()
+	}
+}
+
+func (m *Middleware) RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var (
+			logId     uuid.UUID
+			logPrefix string
+		)
+
+		logId = utils.GenerateLogId(ctx)
+		logPrefix = fmt.Sprintf("[%s][RoleMiddleware]", logId)
+
+		authData, exists := ctx.Get(utils.CtxKeyAuthData)
+		if !exists {
+			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; AuthData not found", logPrefix))
+			res := response.Response(http.StatusForbidden, utils.MsgFail, logId, nil)
+			res.Error = "auth data not found"
+			ctx.AbortWithStatusJSON(http.StatusForbidden, res)
+			return
+		}
+		dataJWT := authData.(map[string]interface{})
+
+		userRole, ok := dataJWT["role"].(string)
+		if !ok {
+			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; there is no role user", logPrefix))
+			res := response.Response(http.StatusForbidden, utils.MsgFail, logId, nil)
+			res.Error = "there is no role user"
+			ctx.AbortWithStatusJSON(http.StatusForbidden, res)
+			return
+		}
+
+		isAllowed := slices.Contains(allowedRoles, userRole)
+		if !isAllowed {
+			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; User with role '%s' tried to access a restricted route;", logPrefix, userRole))
+			res := response.Response(http.StatusForbidden, utils.MsgFail, logId, nil)
+			res.Error = response.Errors{Code: http.StatusForbidden, Message: utils.AccessDenied}
+			ctx.AbortWithStatusJSON(http.StatusForbidden, res)
+			return
+		}
 
 		ctx.Next()
 	}

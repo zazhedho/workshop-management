@@ -26,6 +26,13 @@ definitions:
     - name
     - password
     type: object
+  dto.UserUpdate:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
   response.Error:
     properties:
       code:
@@ -66,6 +73,132 @@ info:
   title: Workshop Management API
   version: "1.0"
 paths:
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: Get a user by JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a user by JWT token
+      tags:
+      - Users
+  /user/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Get a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a user
+      tags:
+      - Users
   /user/login:
     post:
       consumes:
@@ -145,6 +278,27 @@ paths:
           schema:
             $ref: '#/definitions/response.Error'
       summary: Register a new user
+      tags:
+      - Users
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
       tags:
       - Users
 schemes:

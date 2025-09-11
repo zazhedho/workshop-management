@@ -30,8 +30,11 @@ const (
 )
 
 const (
-	RoleAdmin  = "admin"
-	RoleMember = "member"
+	RoleAdmin    = "admin"
+	RoleMember   = "member"
+	RoleCustomer = "customer"
+	RoleMechanic = "mechanic"
+	RoleCashier  = "cashier"
 )
 
 const (
