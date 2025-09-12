@@ -1,15 +1,15 @@
-package handler
+package router
 
 import (
 	"net/http"
-	userHandler "workshop-management/internal/handler/http/user"
-	vehicleHandler "workshop-management/internal/handler/http/vehicle"
-	authRepo "workshop-management/internal/repository/auth"
-	userRepo "workshop-management/internal/repository/user"
-	vehicleRepo "workshop-management/internal/repository/vehicle"
+	userHandler "workshop-management/internal/handlers/http/user"
+	vehicleHandler "workshop-management/internal/handlers/http/vehicle"
+	authRepo "workshop-management/internal/repositories/auth"
+	userRepo "workshop-management/internal/repositories/user"
+	vehicleRepo "workshop-management/internal/repositories/vehicle"
 	userSvc "workshop-management/internal/services/user"
 	vehicleSvc "workshop-management/internal/services/vehicle"
-	"workshop-management/middleware"
+	"workshop-management/middlewares"
 	"workshop-management/pkg/logger"
 	"workshop-management/utils"
 
@@ -27,9 +27,9 @@ type Routes struct {
 func NewRoutes() *Routes {
 	app := gin.Default()
 
-	app.Use(middleware.CORS())
-	app.Use(gin.CustomRecovery(middleware.ErrorHandler))
-	app.Use(middleware.SetContextId())
+	app.Use(middlewares.CORS())
+	app.Use(gin.CustomRecovery(middlewares.ErrorHandler))
+	app.Use(middlewares.SetContextId())
 
 	// health check
 	app.GET("/healthcheck", func(ctx *gin.Context) {
@@ -50,7 +50,7 @@ func (r *Routes) UserRoutes() {
 	repo := userRepo.NewUserRepo(r.DB)
 	uc := userSvc.NewUserService(repo, blacklistRepo)
 	h := userHandler.NewUserHandler(uc)
-	mdw := middleware.NewMiddleware(blacklistRepo)
+	mdw := middlewares.NewMiddleware(blacklistRepo)
 
 	user := r.App.Group("/api/user")
 	{
@@ -76,7 +76,7 @@ func (r *Routes) VehicleRoutes() {
 	h := vehicleHandler.NewVehicleHandler(uc)
 
 	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
-	mdw := middleware.NewMiddleware(blacklistRepo)
+	mdw := middlewares.NewMiddleware(blacklistRepo)
 
 	vehicle := r.App.Group("/api/vehicle").Use(mdw.AuthMiddleware())
 	{

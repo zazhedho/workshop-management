@@ -101,6 +101,13 @@ func (s *ServiceUser) UpdateUser(id string, req dto.UserUpdate) (user.Users, err
 		data.Name = req.Name
 	}
 
+	if req.Phone != "" {
+		if req.Phone == data.Phone {
+			return user.Users{}, errors.New("phone is the same as before")
+		}
+		data.Phone = req.Phone
+	}
+
 	if req.Email != "" {
 		if req.Email == data.Email {
 			return user.Users{}, errors.New("email is the same as before")
