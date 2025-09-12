@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS spareparts (
     stock INT NOT NULL,
     price NUMERIC(12,2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(50),
     updated_at TIMESTAMP DEFAULT NOW(),
-    deleted_at TIMESTAMP NULL
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP NULL,
+    deleted_by VARCHAR(50)
 );

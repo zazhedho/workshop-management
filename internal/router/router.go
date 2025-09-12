@@ -63,7 +63,7 @@ func (r *Routes) UserRoutes() {
 			userPriv.GET("", h.GetUserByAuth)
 			userPriv.GET("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.GetUserById)
 			userPriv.PUT("", h.UpdateUser)
-			userPriv.DELETE("/:id", h.DeleteUser)
+			userPriv.DELETE("/delete", h.DeleteUser)
 		}
 	}
 
@@ -83,8 +83,8 @@ func (r *Routes) VehicleRoutes() {
 		vehicle.POST("", h.CreateVehicle)
 		vehicle.GET("/:id", h.GetVehicle)
 		vehicle.GET("/list", h.FetchVehicles)
-		//vehicle.PUT("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCustomer), h.UpdateVehicle)
-		//vehicle.DELETE("/:id", h.DeleteVehicle)
+		vehicle.PUT("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCustomer), h.UpdateVehicle)
+		vehicle.DELETE("/:id/delete", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCustomer), h.DeleteVehicle)
 	}
 
 }

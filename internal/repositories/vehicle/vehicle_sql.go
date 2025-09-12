@@ -80,12 +80,15 @@ func (r *repo) GetVehicle(id string) (vehicle.Vehicle, error) {
 	return m, nil
 }
 
-func (r *repo) UpdateVehicleById(id string, m vehicle.Vehicle) error {
-	//TODO implement me
-	panic("implement me")
+func (r *repo) UpdateVehicle(id string, data interface{}) (int64, error) {
+	res := r.DB.Where("id = ?", id).Updates(data)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+
+	return res.RowsAffected, nil
 }
 
-func (r *repo) DeleteVehicleById(id string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *repo) DeleteVehicle(m vehicle.Vehicle, data interface{}) error {
+	return r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data).Error
 }

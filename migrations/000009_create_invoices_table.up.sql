@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS invoices (
     total NUMERIC(12,2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(50),
     updated_at TIMESTAMP DEFAULT NOW(),
-    deleted_at TIMESTAMP NULL
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP NULL,
+    deleted_by VARCHAR(50)
 );

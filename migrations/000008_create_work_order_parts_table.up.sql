@@ -5,5 +5,9 @@ CREATE TABLE IF NOT EXISTS work_order_parts (
     quantity INT NOT NULL,
     price NUMERIC(12,2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    deleted_at TIMESTAMP NULL
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP NULL,
+    deleted_by VARCHAR(50)
 );

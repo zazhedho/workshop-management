@@ -3,7 +3,7 @@ package response
 import (
 	"math"
 	"net/http"
-	"workshop-management/utils"
+	"workshop-management/pkg/messages"
 
 	"github.com/google/uuid"
 )
@@ -70,9 +70,9 @@ func PaginationResponse(code, total, page, perPage int, logId uuid.UUID, data in
 	// Check for next page (hasNext)
 	hasNext := page < totalPages
 
-	message := utils.MsgSuccess
+	message := messages.MsgSuccess
 	if total == 0 || page > totalPages {
-		message = utils.MsgNotFound
+		message = messages.MsgNotFound
 	}
 
 	res.LogID = logId.String()

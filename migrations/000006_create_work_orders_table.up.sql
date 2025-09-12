@@ -6,5 +6,7 @@ CREATE TABLE IF NOT EXISTS work_orders (
     notes VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    deleted_at TIMESTAMP NULL
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP NULL,
+    deleted_by VARCHAR(50)
 );

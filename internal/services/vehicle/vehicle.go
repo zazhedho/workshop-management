@@ -44,3 +44,26 @@ func (s *ServiceVehicle) GetVehicle(id string) (vehicle.Vehicle, error) {
 func (s *ServiceVehicle) FetchVehicles(page, limit int, orderBy, orderDir, search, userId string) ([]vehicle.Vehicle, int64, error) {
 	return s.VehicleRepo.FetchVehicles(page, limit, orderBy, orderDir, search, userId)
 }
+
+func (s *ServiceVehicle) UpdateVehicle(id, userId string, req dto.UpdateVehicle) (int64, error) {
+	data := vehicle.Vehicle{
+		Brand:        utils.TitleCase(req.Brand),
+		Model:        utils.TitleCase(req.Model),
+		Year:         req.Year,
+		Color:        utils.TitleCase(req.Color),
+		LicensePlate: strings.ToUpper(req.LicensePlate),
+		UpdatedBy:    userId,
+		UpdatedAt:    time.Now(),
+	}
+
+	return s.VehicleRepo.UpdateVehicle(id, data)
+}
+
+func (s *ServiceVehicle) DeleteVehicle(id, userId string) error {
+	data := map[string]interface{}{
+		"deleted_by": userId,
+		"deleted_at": time.Now(),
+	}
+
+	return s.VehicleRepo.DeleteVehicle(vehicle.Vehicle{Id: id}, data)
+}

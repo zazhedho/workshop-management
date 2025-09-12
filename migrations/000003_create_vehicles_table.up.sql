@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS vehicles (
     id UUID PRIMARY KEY,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    license_plate VARCHAR(20) NOT NULL,
+    license_plate VARCHAR(20) NOT NULL UNIQUE,
     brand VARCHAR(50) NOT NULL,
     model VARCHAR(50) NOT NULL,
     year VARCHAR(5) NOT NULL,

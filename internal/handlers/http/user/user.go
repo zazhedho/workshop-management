@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 	"workshop-management/internal/dto"
 	"workshop-management/internal/services/user"
 	"workshop-management/pkg/logger"
+	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
 	"workshop-management/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +44,7 @@ func (h *HandlerUser) Register(ctx *gin.Context) {
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
 
-		res := response.Response(http.StatusBadRequest, utils.InvalidRequest, logId, nil)
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
 		res.Error = utils.ValidateError(err, reflect.TypeOf(req), "json")
 		ctx.JSON(http.StatusBadRequest, res)
 		return
@@ -55,13 +56,13 @@ func (h *HandlerUser) Register(ctx *gin.Context) {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.RegisterUser; Error: %+v", logPrefix, err))
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Error: email or phone already exists", logPrefix))
-			res := response.Response(http.StatusBadRequest, utils.MsgExists, logId, nil)
+			res := response.Response(http.StatusBadRequest, messages.MsgExists, logId, nil)
 			res.Error = response.Errors{Code: http.StatusBadRequest, Message: "email or phone already exists"}
 			ctx.JSON(http.StatusBadRequest, res)
 			return
 		}
 
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -91,7 +92,7 @@ func (h *HandlerUser) Login(ctx *gin.Context) {
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
 
-		res := response.Response(http.StatusBadRequest, utils.InvalidRequest, logId, nil)
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
 		res.Error = utils.ValidateError(err, reflect.TypeOf(req), "json")
 		ctx.JSON(http.StatusBadRequest, res)
 		return
@@ -101,14 +102,14 @@ func (h *HandlerUser) Login(ctx *gin.Context) {
 	token, err := h.Service.LoginUser(req, logId.String())
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.LoginUser; ERROR: %s;", logPrefix, err))
-		if errors.Is(err, gorm.ErrRecordNotFound) || err.Error() == utils.ErrHashPassword {
-			res := response.Response(http.StatusBadRequest, utils.InvalidCred, logId, nil)
-			res.Error = response.Errors{Code: http.StatusBadRequest, Message: utils.MsgCredential}
+		if errors.Is(err, gorm.ErrRecordNotFound) || err.Error() == messages.ErrHashPassword {
+			res := response.Response(http.StatusBadRequest, messages.InvalidCred, logId, nil)
+			res.Error = response.Errors{Code: http.StatusBadRequest, Message: messages.MsgCredential}
 			ctx.JSON(http.StatusBadRequest, res)
 			return
 		}
 
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -136,7 +137,7 @@ func (h *HandlerUser) Logout(ctx *gin.Context) {
 	token, ok := ctx.Get("token")
 	if !ok {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; token not found in context", logPrefix))
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = "token not found"
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -144,7 +145,7 @@ func (h *HandlerUser) Logout(ctx *gin.Context) {
 
 	if err := h.Service.LogoutUser(token.(string)); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.LogoutUser; Error: %+v", logPrefix, err))
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -171,19 +172,8 @@ func (h *HandlerUser) GetUserById(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][UserHandler][GetUserByID]", logId)
 
-	id := ctx.Param("id")
-	if id == "" {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Missing ID in path", logPrefix))
-		res := response.Response(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), logId, nil)
-		res.Error = "ID parameter is required"
-		ctx.JSON(http.StatusBadRequest, res)
-		return
-	}
-	if _, err := uuid.Parse(id); err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Invalid ID: '%s'", logPrefix, id))
-		res := response.Response(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), logId, nil)
-		res.Error = response.Errors{Code: http.StatusBadRequest, Message: "ID must be a valid UUID"}
-		ctx.JSON(http.StatusBadRequest, res)
+	id, err := utils.ValidateUUID(ctx, logId)
+	if err != nil {
 		return
 	}
 
@@ -191,13 +181,13 @@ func (h *HandlerUser) GetUserById(ctx *gin.Context) {
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.GetUserByID; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			res := response.Response(http.StatusNotFound, utils.MsgNotFound, logId, nil)
+			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
 			ctx.JSON(http.StatusNotFound, res)
 			return
 		}
 
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -229,13 +219,13 @@ func (h *HandlerUser) GetUserByAuth(ctx *gin.Context) {
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.GetUserByAuth; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			res := response.Response(http.StatusNotFound, utils.MsgNotFound, logId, nil)
+			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
 			ctx.JSON(http.StatusNotFound, res)
 			return
 		}
 
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -260,16 +250,29 @@ func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][UserHandler][GetAllUsers]", logId)
 
-	users, err := h.Service.GetAllUsers()
+	//query parameters
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+	orderBy := ctx.DefaultQuery("order_by", "updated_at")
+	orderDir := ctx.DefaultQuery("order_direction", "desc")
+	search := ctx.Query("search")
+
+	users, totalData, err := h.Service.GetAllUsers(page, limit, orderBy, orderDir, search)
 	if err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.GetAllUsers; ERROR: %s;", logPrefix, err))
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; GetAllUsers; ERROR: %+v;", logPrefix, err))
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
-	res := response.Response(http.StatusOK, "success", logId, users)
+	res := response.PaginationResponse(http.StatusOK, int(totalData), page, limit, logId, users)
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(users)))
 	ctx.JSON(http.StatusOK, res)
 }
@@ -298,7 +301,7 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
 
-		res := response.Response(http.StatusBadRequest, utils.InvalidRequest, logId, nil)
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
 		res.Error = utils.ValidateError(err, reflect.TypeOf(req), "json")
 		ctx.JSON(http.StatusBadRequest, res)
 		return
@@ -308,13 +311,13 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.UpdateUser; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			res := response.Response(http.StatusNotFound, utils.MsgNotFound, logId, nil)
+			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
 			ctx.JSON(http.StatusNotFound, res)
 			return
 		}
 
-		res := response.Response(http.StatusBadRequest, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusBadRequest, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusBadRequest, res)
 		return
@@ -340,20 +343,19 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 func (h *HandlerUser) DeleteUser(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][UserHandler][DeleteUser]", logId)
+	authData := utils.GetAuthData(ctx)
+	userId := utils.InterfaceString(authData["user_id"])
 
-	id := ctx.Param("id")
-
-	err := h.Service.DeleteUser(id)
-	if err != nil {
+	if err := h.Service.DeleteUser(userId); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.DeleteUser; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			res := response.Response(http.StatusNotFound, utils.MsgNotFound, logId, nil)
+			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
 			ctx.JSON(http.StatusNotFound, res)
 			return
 		}
 
-		res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return

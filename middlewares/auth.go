@@ -7,6 +7,7 @@ import (
 	"slices"
 	"workshop-management/internal/domain/auth"
 	"workshop-management/pkg/logger"
+	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
 	"workshop-management/utils"
 
@@ -42,7 +43,7 @@ func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 		tokenString, dataJWT, err := utils.JwtClaims(ctx)
 		if err != nil {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Invalid Token: %s; Error: %s;", logPrefix, tokenString, err.Error()))
-			res := response.Response(http.StatusUnauthorized, utils.MsgFail, logId, nil)
+			res := response.Response(http.StatusUnauthorized, messages.MsgFail, logId, nil)
 			res.Error = err.Error()
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 			return
@@ -53,7 +54,7 @@ func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 		_, err = m.BlacklistRepo.GetByToken(tokenString)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; blacklistRepo.GetByToken; Error: %+v", logPrefix, err))
-			res := response.Response(http.StatusInternalServerError, utils.MsgFail, logId, nil)
+			res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 			res.Error = err.Error()
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 			return
@@ -62,7 +63,7 @@ func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 		//the token is valid but has been logged out
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Invalid Token: %s; Error: token is blacklisted;", logPrefix, tokenString))
-			res := response.Response(http.StatusUnauthorized, utils.MsgFail, logId, nil)
+			res := response.Response(http.StatusUnauthorized, messages.MsgFail, logId, nil)
 			res.Error = "Please login and try again"
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 			return
@@ -88,7 +89,7 @@ func (m *Middleware) RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 		authData, exists := ctx.Get(utils.CtxKeyAuthData)
 		if !exists {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; AuthData not found", logPrefix))
-			res := response.Response(http.StatusForbidden, utils.MsgDenied, logId, nil)
+			res := response.Response(http.StatusForbidden, messages.MsgDenied, logId, nil)
 			res.Error = "auth data not found"
 			ctx.AbortWithStatusJSON(http.StatusForbidden, res)
 			return
@@ -98,7 +99,7 @@ func (m *Middleware) RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 		userRole, ok := dataJWT["role"].(string)
 		if !ok {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; there is no role user", logPrefix))
-			res := response.Response(http.StatusForbidden, utils.MsgDenied, logId, nil)
+			res := response.Response(http.StatusForbidden, messages.MsgDenied, logId, nil)
 			res.Error = "there is no role user"
 			ctx.AbortWithStatusJSON(http.StatusForbidden, res)
 			return
@@ -107,8 +108,8 @@ func (m *Middleware) RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 		isAllowed := slices.Contains(allowedRoles, userRole)
 		if !isAllowed {
 			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; User with role '%s' tried to access a restricted route;", logPrefix, userRole))
-			res := response.Response(http.StatusForbidden, utils.MsgDenied, logId, nil)
-			res.Error = response.Errors{Code: http.StatusForbidden, Message: utils.AccessDenied}
+			res := response.Response(http.StatusForbidden, messages.MsgDenied, logId, nil)
+			res.Error = response.Errors{Code: http.StatusForbidden, Message: messages.AccessDenied}
 			ctx.AbortWithStatusJSON(http.StatusForbidden, res)
 			return
 		}

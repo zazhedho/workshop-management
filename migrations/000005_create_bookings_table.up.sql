@@ -3,8 +3,12 @@ CREATE TABLE IF NOT EXISTS bookings (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+    notes VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
     booking_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP NULL,
+    deleted_by VARCHAR(50)
 );
