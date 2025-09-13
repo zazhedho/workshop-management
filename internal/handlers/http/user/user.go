@@ -277,7 +277,7 @@ func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-// UpdateUser godoc
+// Update godoc
 // @Summary Update a user
 // @Description Update a user
 // @Tags Users
@@ -291,12 +291,12 @@ func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 // @Failure 500 {object} response.Error
 // @Security ApiKeyAuth
 // @Router /user [put]
-func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
+func (h *HandlerUser) Update(ctx *gin.Context) {
 	var req dto.UserUpdate
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][UserHandler][UpdateUser]", logId)
+	logPrefix := fmt.Sprintf("[%s][UserHandler][Update]", logId)
 
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
@@ -307,9 +307,9 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.Service.UpdateUser(userId, req)
+	data, err := h.Service.Update(userId, req)
 	if err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.UpdateUser; ERROR: %s;", logPrefix, err))
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Update; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
@@ -328,7 +328,7 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-// DeleteUser godoc
+// Delete godoc
 // @Summary Delete a user
 // @Description Delete a user
 // @Tags Users
@@ -340,14 +340,14 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 // @Failure 500 {object} response.Error
 // @Security ApiKeyAuth
 // @Router /user/{id} [delete]
-func (h *HandlerUser) DeleteUser(ctx *gin.Context) {
+func (h *HandlerUser) Delete(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][UserHandler][DeleteUser]", logId)
+	logPrefix := fmt.Sprintf("[%s][UserHandler][Delete]", logId)
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 
-	if err := h.Service.DeleteUser(userId); err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.DeleteUser; ERROR: %s;", logPrefix, err))
+	if err := h.Service.Delete(userId); err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Delete; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}

@@ -18,11 +18,11 @@ import (
 
 // Middleware struct to hold dependencies
 type Middleware struct {
-	BlacklistRepo auth.Repository
+	BlacklistRepo auth.RepoAuth
 }
 
 // NewMiddleware creates a new middleware with its dependencies
-func NewMiddleware(blacklistRepo auth.Repository) *Middleware {
+func NewMiddleware(blacklistRepo auth.RepoAuth) *Middleware {
 	return &Middleware{
 		BlacklistRepo: blacklistRepo,
 	}

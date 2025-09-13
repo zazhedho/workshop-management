@@ -1,4 +1,4 @@
-package vehicle
+package service
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"workshop-management/internal/dto"
-	"workshop-management/internal/services/vehicle"
+	"workshop-management/internal/services/service"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
@@ -17,21 +17,22 @@ import (
 	"gorm.io/gorm"
 )
 
-type HandlerVehicle struct {
-	Service *vehicle.ServiceVehicle
+// HandlerService (Service = jasa), not service layer
+type HandlerService struct {
+	Service *service.SrvService
 }
 
-func NewVehicleHandler(s *vehicle.ServiceVehicle) *HandlerVehicle {
-	return &HandlerVehicle{Service: s}
+func NewServiceHandler(s *service.SrvService) *HandlerService {
+	return &HandlerService{Service: s}
 }
 
-func (h *HandlerVehicle) Create(ctx *gin.Context) {
-	var req dto.AddVehicle
+func (h *HandlerService) Create(ctx *gin.Context) {
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Create]", logId)
+	logPrefix := fmt.Sprintf("[%s][HandlerService][Create]", logId)
 
+	var req dto.AddService
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
 
@@ -45,40 +46,63 @@ func (h *HandlerVehicle) Create(ctx *gin.Context) {
 	data, err := h.Service.Create(userId, req)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Create; Error: %+v", logPrefix, err))
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Error: License plate already exists", logPrefix))
-			res := response.Response(http.StatusBadRequest, messages.MsgExists, logId, nil)
-			res.Error = response.Errors{Code: http.StatusBadRequest, Message: "license plate already exists"}
-			ctx.JSON(http.StatusBadRequest, res)
-			return
-		}
-
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
-	res := response.Response(http.StatusCreated, "Add vehicle successfully", logId, data)
+	res := response.Response(http.StatusCreated, "Add service successfully", logId, data)
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Success: %+v;", logPrefix, utils.JsonEncode(data)))
 	ctx.JSON(http.StatusCreated, res)
 }
 
-func (h *HandlerVehicle) GetById(ctx *gin.Context) {
+func (h *HandlerService) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][GetById]", logId)
+	logPrefix := fmt.Sprintf("[%s][HandlerService][Fetch]", logId)
 
-	vehicleId, err := utils.ValidateUUID(ctx, logId)
+	//query parameters
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+	orderBy := ctx.DefaultQuery("order_by", "updated_at")
+	orderDir := ctx.DefaultQuery("order_direction", "desc")
+	search := ctx.Query("search")
+
+	data, totalData, err := h.Service.Fetch(page, limit, orderBy, orderDir, search)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Fetch; Error: %+v", logPrefix, err))
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := response.PaginationResponse(http.StatusOK, int(totalData), page, limit, logId, data)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(data)))
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (h *HandlerService) GetById(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][HandlerService][GetById]", logId)
+
+	serviceId, err := utils.ValidateUUID(ctx, logId)
 	if err != nil {
 		return
 	}
 
-	data, err := h.Service.GetById(vehicleId)
+	data, err := h.Service.GetById(serviceId)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; GetById; Error: %+v", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := response.Response(http.StatusNotFound, messages.NotFound, logId, nil)
-			res.Error = "vehicle not found"
+			res.Error = "service not found"
 			ctx.JSON(http.StatusNotFound, res)
 			return
 		}
@@ -94,63 +118,18 @@ func (h *HandlerVehicle) GetById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-func (h *HandlerVehicle) Fetch(ctx *gin.Context) {
+func (h *HandlerService) Update(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Fetch]", logId)
-	authData := utils.GetAuthData(ctx)
-
-	var userId string
-	isCustomer := utils.InterfaceString(authData["role"]) == utils.RoleCustomer
-	if isCustomer {
-		userId = utils.InterfaceString(authData["user_id"])
-	}
-
-	//query parameters
-	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-	orderBy := ctx.DefaultQuery("order_by", "updated_at")
-	orderDir := ctx.DefaultQuery("order_direction", "desc")
-	search := ctx.Query("search")
-
-	vehicles, totalData, err := h.Service.Fetch(page, limit, orderBy, orderDir, search, userId)
-	if err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Fetch; Error: %+v", logPrefix, err))
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			res := response.Response(http.StatusNotFound, messages.NotFound, logId, nil)
-			res.Error = "List vehicle not found"
-			ctx.JSON(http.StatusNotFound, res)
-			return
-		}
-
-		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
-		res.Error = err.Error()
-		ctx.JSON(http.StatusInternalServerError, res)
-		return
-	}
-
-	res := response.PaginationResponse(http.StatusOK, int(totalData), page, limit, logId, vehicles)
-	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(vehicles)))
-	ctx.JSON(http.StatusOK, res)
-}
-
-func (h *HandlerVehicle) Update(ctx *gin.Context) {
-	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Update]", logId)
+	logPrefix := fmt.Sprintf("[%s][HandlerService][Update]", logId)
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 
-	vehicleId, err := utils.ValidateUUID(ctx, logId)
+	serviceId, err := utils.ValidateUUID(ctx, logId)
 	if err != nil {
 		return
 	}
 
-	var req dto.UpdateVehicle
+	var req dto.UpdateService
 	if err = ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
 		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
@@ -160,17 +139,9 @@ func (h *HandlerVehicle) Update(ctx *gin.Context) {
 	}
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Request: %+v;", logPrefix, utils.JsonEncode(req)))
 
-	rows, err := h.Service.Update(vehicleId, userId, req)
+	rows, err := h.Service.Update(userId, serviceId, req)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Update; Error: %+v", logPrefix, err))
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; License plate: '%s' already exists", logPrefix, req.LicensePlate))
-			res := response.Response(http.StatusBadRequest, messages.MsgExists, logId, nil)
-			res.Error = response.Errors{Code: http.StatusBadRequest, Message: fmt.Sprintf("License plate: '%s' is already exists", req.LicensePlate)}
-			ctx.JSON(http.StatusBadRequest, res)
-			return
-		}
-
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
@@ -183,23 +154,24 @@ func (h *HandlerVehicle) Update(ctx *gin.Context) {
 		return
 	}
 
-	res := response.Response(http.StatusOK, fmt.Sprintf("Vehicle with ID: '%s' updated successfully", vehicleId), logId, nil)
-	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Vehicle with ID: '%s' updated successfully; Data: %v", logPrefix, vehicleId, utils.JsonEncode(req)))
+	res := response.Response(http.StatusOK, fmt.Sprintf("Service with ID: '%s' updated successfully", serviceId), logId, nil)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Service with ID: '%s' updated successfully; Data: %v", logPrefix, serviceId, utils.JsonEncode(req)))
 	ctx.JSON(http.StatusOK, res)
+	return
 }
 
-func (h *HandlerVehicle) Delete(ctx *gin.Context) {
+func (h *HandlerService) Delete(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Delete]", logId)
+	logPrefix := fmt.Sprintf("[%s][HandlerService][Delete]", logId)
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 
-	vehicleId, err := utils.ValidateUUID(ctx, logId)
+	serviceId, err := utils.ValidateUUID(ctx, logId)
 	if err != nil {
 		return
 	}
 
-	if err = h.Service.Delete(vehicleId, userId); err != nil {
+	if err = h.Service.Delete(userId, serviceId); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Delete; Error: %+v", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
@@ -214,7 +186,8 @@ func (h *HandlerVehicle) Delete(ctx *gin.Context) {
 		return
 	}
 
-	res := response.Response(http.StatusOK, fmt.Sprintf("Vehicle with ID: '%s' deleted successfully", vehicleId), logId, nil)
-	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Vehicle with ID: '%s' deleted successfully", logPrefix, vehicleId))
+	res := response.Response(http.StatusOK, fmt.Sprintf("Service with ID: '%s' deleted successfully", serviceId), logId, nil)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Service with ID: '%s' deleted successfully", logPrefix, serviceId))
 	ctx.JSON(http.StatusOK, res)
+	return
 }

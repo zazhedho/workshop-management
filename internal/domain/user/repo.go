@@ -1,6 +1,6 @@
 package user
 
-type Repository interface {
+type RepoUser interface {
 	Store(m Users) error
 	GetByEmail(email string) (Users, error)
 	GetByID(id string) (Users, error)

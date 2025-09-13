@@ -12,7 +12,7 @@ type repo struct {
 	DB *gorm.DB
 }
 
-func NewVehicleRepo(db *gorm.DB) vehicle.Repository {
+func NewVehicleRepo(db *gorm.DB) vehicle.RepoVehicle {
 	return &repo{DB: db}
 }
 
@@ -20,7 +20,7 @@ func (r *repo) Store(m vehicle.Vehicle) error {
 	return r.DB.Create(&m).Error
 }
 
-func (r *repo) FetchVehicles(page, limit int, orderBy, orderDir, search, userId string) (ret []vehicle.Vehicle, totalData int64, err error) {
+func (r *repo) Fetch(page, limit int, orderBy, orderDir, search, userId string) (ret []vehicle.Vehicle, totalData int64, err error) {
 	query := r.DB.Table(vehicle.Vehicle{}.TableName())
 
 	if userId != "" {
@@ -72,7 +72,7 @@ func (r *repo) FetchVehicles(page, limit int, orderBy, orderDir, search, userId 
 	return ret, totalData, nil
 }
 
-func (r *repo) GetVehicle(id string) (vehicle.Vehicle, error) {
+func (r *repo) GetById(id string) (vehicle.Vehicle, error) {
 	var m vehicle.Vehicle
 	if err := r.DB.Where("id = ?", id).First(&m).Error; err != nil {
 		return m, err
@@ -80,8 +80,8 @@ func (r *repo) GetVehicle(id string) (vehicle.Vehicle, error) {
 	return m, nil
 }
 
-func (r *repo) UpdateVehicle(id string, data interface{}) (int64, error) {
-	res := r.DB.Where("id = ?", id).Updates(data)
+func (r *repo) Update(m vehicle.Vehicle, data interface{}) (int64, error) {
+	res := r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data)
 	if res.Error != nil {
 		return 0, res.Error
 	}
@@ -89,6 +89,6 @@ func (r *repo) UpdateVehicle(id string, data interface{}) (int64, error) {
 	return res.RowsAffected, nil
 }
 
-func (r *repo) DeleteVehicle(m vehicle.Vehicle, data interface{}) error {
+func (r *repo) Delete(m vehicle.Vehicle, data interface{}) error {
 	return r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data).Error
 }

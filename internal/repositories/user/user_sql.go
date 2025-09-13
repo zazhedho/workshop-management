@@ -12,7 +12,7 @@ type repo struct {
 	DB *gorm.DB
 }
 
-func NewUserRepo(db *gorm.DB) user.Repository {
+func NewUserRepo(db *gorm.DB) user.RepoUser {
 	return &repo{DB: db}
 }
 

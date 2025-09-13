@@ -10,7 +10,7 @@ type blacklistRepo struct {
 	DB *gorm.DB
 }
 
-func NewBlacklistRepo(db *gorm.DB) auth.Repository {
+func NewBlacklistRepo(db *gorm.DB) auth.RepoAuth {
 	return &blacklistRepo{
 		DB: db,
 	}
