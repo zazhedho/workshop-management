@@ -237,15 +237,20 @@ func (h *HandlerUser) GetUserByAuth(ctx *gin.Context) {
 }
 
 // GetAllUsers godoc
-// @Summary Get all users
-// @Description Get all users
-// @Tags Users
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} response.Success
-// @Failure 500 {object} response.Error
-// @Security ApiKeyAuth
-// @Router /users [get]
+// @Summary      Get all users
+// @Description  Get all users
+// @Tags         Users
+// @Accept       json
+// @Produce  	 json
+// @Param        page            query     int     false  "Page number for pagination"
+// @Param        limit           query     int     false  "Number of items per page"
+// @Param        order_by        query     string  false  "Field to sort by"
+// @Param        order_direction query     string  false  "Sort direction (asc/desc)"
+// @Param        search          query     string  false  "Search query to filter vehicles"
+// @Success      200             {object}  response.Success
+// @Failure      500             {object}  response.Error
+// @Security     ApiKeyAuth
+// @Router       /users [get]
 func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][UserHandler][GetAllUsers]", logId)
@@ -339,7 +344,7 @@ func (h *HandlerUser) Update(ctx *gin.Context) {
 // @Failure 404 {object} response.Error
 // @Failure 500 {object} response.Error
 // @Security ApiKeyAuth
-// @Router /user/{id} [delete]
+// @Router /user [delete]
 func (h *HandlerUser) Delete(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][UserHandler][Delete]", logId)

@@ -25,6 +25,18 @@ func NewVehicleHandler(s *vehicle.ServiceVehicle) *HandlerVehicle {
 	return &HandlerVehicle{Service: s}
 }
 
+// Create godoc
+// @Summary      Create a new vehicle
+// @Description  Create a new vehicle with the provided details.
+// @Tags         Vehicles
+// @Accept       json
+// @Produce      json
+// @Param        vehicle  body      dto.AddVehicle  true  "Vehicle details to be created"
+// @Success      201      {object}  response.Success  "Vehicle created successfully"
+// @Failure      400      {object}  response.Error    "Invalid request body"
+// @Failure      500      {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /vehicle [post]
 func (h *HandlerVehicle) Create(ctx *gin.Context) {
 	var req dto.AddVehicle
 	authData := utils.GetAuthData(ctx)
@@ -64,6 +76,18 @@ func (h *HandlerVehicle) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, res)
 }
 
+// GetById godoc
+// @Summary      Get a vehicle by ID
+// @Description  Retrieve vehicle details using the vehicle ID.
+// @Tags         Vehicles
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Vehicle ID"
+// @Success      200  {object}  response.Success  "Vehicle details retrieved successfully"
+// @Failure      404  {object}  response.Error    "Vehicle not found"
+// @Failure      500  {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /vehicle/{id} [get]
 func (h *HandlerVehicle) GetById(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][GetById]", logId)
@@ -94,6 +118,22 @@ func (h *HandlerVehicle) GetById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// Fetch godoc
+// @Summary      Get a list of vehicles
+// @Description  Retrieve a list of vehicles with optional filters and pagination.
+// @Tags         Vehicles
+// @Accept       json
+// @Produce      json
+// @Param        page            query     int     false  "Page number for pagination"
+// @Param        limit           query     int     false  "Number of items per page"
+// @Param        order_by        query     string  false  "Field to sort by"
+// @Param        order_direction query     string  false  "Sort direction (asc/desc)"
+// @Param        search          query     string  false  "Search query to filter vehicles"
+// @Success      200             {object}  response.Success  "List of vehicles retrieved successfully"
+// @Failure      404             {object}  response.Error    "No vehicles found"
+// @Failure      500             {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /vehicle/list [get]
 func (h *HandlerVehicle) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Fetch]", logId)
@@ -139,6 +179,20 @@ func (h *HandlerVehicle) Fetch(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// Update godoc
+// @Summary      Update a vehicle
+// @Description  Update an existing vehicle's details.
+// @Tags         Vehicles
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string          true  "Vehicle ID"
+// @Param        vehicle  body      dto.UpdateVehicle  true  "Updated vehicle details"
+// @Success      200      {object}  response.Success  "Vehicle updated successfully"
+// @Failure      400      {object}  response.Error    "Invalid request body"
+// @Failure      404      {object}  response.Error    "Vehicle not found"
+// @Failure      500      {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /vehicle/{id} [put]
 func (h *HandlerVehicle) Update(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Update]", logId)
@@ -188,6 +242,18 @@ func (h *HandlerVehicle) Update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// Delete godoc
+// @Summary      Delete a vehicle
+// @Description  Delete a vehicle by its ID.
+// @Tags         Vehicles
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Vehicle ID"
+// @Success      200  {object}  response.Success  "Vehicle deleted successfully"
+// @Failure      404  {object}  response.Error    "Vehicle not found"
+// @Failure      500  {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /vehicle/{id} [delete]
 func (h *HandlerVehicle) Delete(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Delete]", logId)
