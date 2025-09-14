@@ -2,13 +2,16 @@ package router
 
 import (
 	"net/http"
+	bookingHandler "workshop-management/internal/handlers/http/booking"
 	serviceHandler "workshop-management/internal/handlers/http/service"
 	userHandler "workshop-management/internal/handlers/http/user"
 	vehicleHandler "workshop-management/internal/handlers/http/vehicle"
 	authRepo "workshop-management/internal/repositories/auth"
+	bookingRepo "workshop-management/internal/repositories/booking"
 	serviceRepo "workshop-management/internal/repositories/service"
 	userRepo "workshop-management/internal/repositories/user"
 	vehicleRepo "workshop-management/internal/repositories/vehicle"
+	bookingSvc "workshop-management/internal/services/booking"
 	serviceSvc "workshop-management/internal/services/service"
 	userSvc "workshop-management/internal/services/user"
 	vehicleSvc "workshop-management/internal/services/vehicle"
@@ -66,7 +69,7 @@ func (r *Routes) UserRoutes() {
 			userPriv.GET("", h.GetUserByAuth)
 			userPriv.GET("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.GetUserById)
 			userPriv.PUT("", h.Update)
-			userPriv.DELETE("/delete", h.Delete)
+			userPriv.DELETE("", h.Delete)
 		}
 	}
 
@@ -77,9 +80,7 @@ func (r *Routes) VehicleRoutes() {
 	repo := vehicleRepo.NewVehicleRepo(r.DB)
 	uc := vehicleSvc.NewVehicleService(repo)
 	h := vehicleHandler.NewVehicleHandler(uc)
-
-	blacklistRepo := authRepo.NewBlacklistRepo(r.DB)
-	mdw := middlewares.NewMiddleware(blacklistRepo)
+	mdw := middlewares.NewMiddleware(authRepo.NewBlacklistRepo(r.DB))
 
 	vehicle := r.App.Group("/api/vehicle").Use(mdw.AuthMiddleware())
 	{
@@ -87,7 +88,7 @@ func (r *Routes) VehicleRoutes() {
 		vehicle.GET("/:id", h.GetById)
 		vehicle.GET("/list", h.Fetch)
 		vehicle.PUT("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCustomer), h.Update)
-		vehicle.DELETE("/:id/delete", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCustomer), h.Delete)
+		vehicle.DELETE("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCustomer), h.Delete)
 	}
 
 }
@@ -109,5 +110,17 @@ func (r *Routes) ServiceRoutes() {
 			svcPriv.PUT("/:id", h.Update)
 			svcPriv.DELETE("/:id", h.Delete)
 		}
+	}
+}
+
+func (r *Routes) BookingRoutes() {
+	repo := bookingRepo.NewBookingRepo(r.DB)
+	uc := bookingSvc.NewServiceBooking(repo)
+	h := bookingHandler.NewBookingHandler(uc)
+	mdw := middlewares.NewMiddleware(authRepo.NewBlacklistRepo(r.DB))
+
+	booking := r.App.Group("/api/bookings").Use(mdw.AuthMiddleware())
+	{
+		booking.POST("", h.Create)
 	}
 }
