@@ -48,10 +48,26 @@ func (r *repo) GetServicesByIDs(serviceIDs []string) ([]service.Service, error) 
 
 func (r *repo) GetById(id string) (booking.Booking, error) {
 	var m booking.Booking
-	if err := r.DB.Preload("Services").Where("id = ?", id).First(&m).Error; err != nil {
+	if err := r.DB.Preload("Services").Where("id = ?", id).First(&m).Debug().Error; err != nil {
 		return booking.Booking{}, err
 	}
 	return m, nil
+}
+
+func (r *repo) GetByIdUserId(id, userId string) (ret booking.Booking, err error) {
+	query := r.DB.Model(&booking.Booking{}).Debug()
+
+	if id != "" {
+		query = query.Where("id = ?", id)
+	}
+	if userId != "" {
+		query = query.Where("user_id = ?", userId)
+	}
+
+	if err = r.DB.First(&ret).Error; err != nil {
+		return booking.Booking{}, err
+	}
+	return ret, nil
 }
 
 func (r *repo) GetBookingServicesByBookingId(bookingId string) ([]booking.BookService, error) {
@@ -116,4 +132,12 @@ func (r *repo) Fetch(params filter.BaseParams) (bookings []booking.Booking, tota
 	}
 
 	return bookings, totalData, nil
+}
+
+func (r *repo) Update(m booking.Booking, data interface{}) (int64, error) {
+	res := r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data)
+	if res.Error != nil {
+		return 0, nil
+	}
+	return res.RowsAffected, nil
 }

@@ -6,6 +6,7 @@ const (
 	MsgErr         = "Something Went Wrong"
 	MsgFail        = "Something Went Wrong"
 	MsgDenied      = "Access Denied"
+	MsgForbidden   = "Forbidden"
 	MsgCredential  = "Invalid Credentials. Please input the correct credentials and try again."
 	MsgRequired    = "Please fill the %s field."
 	MsgExists      = "Already exists."

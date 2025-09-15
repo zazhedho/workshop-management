@@ -161,3 +161,59 @@ func (h *HandlerBooking) Fetch(ctx *gin.Context) {
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(bookings)))
 	ctx.JSON(http.StatusOK, res)
 }
+
+// UpdateStatus godoc
+// @Summary      Update status a booking
+// @Description  Update status a booking with the provided details.
+// @Tags         Bookings
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string            true  "Booking ID"
+// @Param        booking  body      dto.UpdateBookingStatus true  "Booking details to be updated"
+// @Success      200      {object}  response.Success  "Booking updated successfully"
+// @Failure      400      {object}  response.Error    "Invalid request body"
+// @Failure      404      {object}  response.Error    "Booking not found"
+// @Failure      500      {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /booking/{id}/status [put]
+func (h *HandlerBooking) UpdateStatus(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][HandlerBooking][Update]", logId)
+	authData := utils.GetAuthData(ctx)
+	role := utils.InterfaceString(authData["role"])
+	userId := utils.InterfaceString(authData["user_id"])
+
+	bookingId, err := utils.ValidateUUID(ctx, logId)
+	if err != nil {
+		return
+	}
+
+	var req dto.UpdateBookingStatus
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
+		res.Error = utils.ValidateError(err, reflect.TypeOf(req), "json")
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Request: %+v;", logPrefix, utils.JsonEncode(req)))
+
+	rows, err := h.Service.UpdateStatus(bookingId, userId, role, req)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Update; Error: %+v", logPrefix, err))
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+	if rows == 0 {
+		res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
+		res.Error = response.Errors{Code: http.StatusNotFound, Message: messages.NotFound}
+		ctx.JSON(http.StatusNotFound, res)
+		return
+	}
+
+	res := response.Response(http.StatusOK, fmt.Sprintf("Booking with ID: '%s' updated successfully", bookingId), logId, nil)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Success: %+v;", logPrefix, utils.JsonEncode(map[string]interface{}{"id": bookingId, "status": req.Status})))
+	ctx.JSON(http.StatusOK, res)
+}

@@ -20,7 +20,11 @@ const (
 )
 
 const (
-	StsPending   = "pending"
-	StsConfirmed = "confirmed"
-	StsCancelled = "cancelled"
+	StsPending    = "pending"
+	StsConfirmed  = "confirmed"
+	StsCancelled  = "cancelled"
+	StsCompleted  = "completed"
+	StsOnProgress = "on progress"
+	StsApproved   = "approved"
+	StsRejected   = "rejected"
 )

@@ -82,7 +82,7 @@ func (r *Routes) VehicleRoutes() {
 	h := vehicleHandler.NewVehicleHandler(uc)
 	mdw := middlewares.NewMiddleware(authRepo.NewBlacklistRepo(r.DB))
 
-	r.App.GET("/api/vehicles", h.Fetch).Use(mdw.AuthMiddleware())
+	r.App.GET("/api/vehicles", mdw.AuthMiddleware(), h.Fetch)
 	vehicle := r.App.Group("/api/vehicle").Use(mdw.AuthMiddleware())
 	{
 		vehicle.POST("", h.Create)
@@ -118,10 +118,11 @@ func (r *Routes) BookingRoutes() {
 	h := bookingHandler.NewBookingHandler(uc)
 	mdw := middlewares.NewMiddleware(authRepo.NewBlacklistRepo(r.DB))
 
-	r.App.GET("/api/bookings", h.Fetch).Use(mdw.AuthMiddleware())
+	r.App.GET("/api/bookings", mdw.AuthMiddleware(), h.Fetch)
 	booking := r.App.Group("/api/booking").Use(mdw.AuthMiddleware())
 	{
 		booking.POST("", h.Create)
 		booking.GET("/:id", h.GetBookingById)
+		booking.PUT("/:id/status", h.UpdateStatus)
 	}
 }
