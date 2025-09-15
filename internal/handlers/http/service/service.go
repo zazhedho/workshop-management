@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strconv"
 	"workshop-management/internal/dto"
 	"workshop-management/internal/services/service"
+	"workshop-management/pkg/filter"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
@@ -61,20 +61,10 @@ func (h *HandlerService) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerService][Fetch]", logId)
 
-	//query parameters
-	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-	orderBy := ctx.DefaultQuery("order_by", "updated_at")
-	orderDir := ctx.DefaultQuery("order_direction", "desc")
-	search := ctx.Query("search")
+	params, _ := filter.GetBaseParams(ctx, "updated_at", "desc", 10)
+	params.Filters = filter.WhitelistFilter(params.Filters, []string{"price"})
 
-	data, totalData, err := h.Service.Fetch(page, limit, orderBy, orderDir, search)
+	data, totalData, err := h.Service.Fetch(params)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Fetch; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -83,7 +73,7 @@ func (h *HandlerService) Fetch(ctx *gin.Context) {
 		return
 	}
 
-	res := response.PaginationResponse(http.StatusOK, int(totalData), page, limit, logId, data)
+	res := response.PaginationResponse(http.StatusOK, int(totalData), params.Page, params.Limit, logId, data)
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(data)))
 	ctx.JSON(http.StatusOK, res)
 }

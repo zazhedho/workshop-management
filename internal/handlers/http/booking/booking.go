@@ -1,17 +1,20 @@
 package booking
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"workshop-management/internal/dto"
 	"workshop-management/internal/services/booking"
+	"workshop-management/pkg/filter"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
 	"workshop-management/utils"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type HandlerBooking struct {
@@ -51,4 +54,98 @@ func (h *HandlerBooking) Create(ctx *gin.Context) {
 	res := response.Response(http.StatusCreated, "Create booking successfully", logId, data)
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Success: %+v;", logPrefix, utils.JsonEncode(data)))
 	ctx.JSON(http.StatusCreated, res)
+}
+
+// GetBookingById godoc
+// @Summary      Get a booking by ID
+// @Description  Retrieve booking details using the booking ID.
+// @Tags         Bookings
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Booking ID"
+// @Success      200  {object}  response.Success  "Booking details retrieved successfully"
+// @Failure      404  {object}  response.Error    "Booking not found"
+// @Failure      500  {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /booking/{id} [get]
+func (h *HandlerBooking) GetBookingById(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][HandlerBooking][GetBookingById]", logId)
+
+	bookingId, err := utils.ValidateUUID(ctx, logId)
+	if err != nil {
+		return
+	}
+
+	data, err := h.Service.GetByID(bookingId)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; GetByID; Error: %+v", logPrefix, err))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			res := response.Response(http.StatusNotFound, messages.NotFound, logId, nil)
+			res.Error = "booking not found"
+			ctx.JSON(http.StatusNotFound, res)
+			return
+		}
+
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := response.Response(http.StatusOK, "success", logId, data)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(data)))
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Fetch godoc
+// @Summary      Get a list of bookings
+// @Description  Retrieve a list of bookings with optional filters and pagination.
+// @Tags         Bookings
+// @Accept       json
+// @Produce      json
+// @Param        page            query     int     false  "Page number for pagination"
+// @Param        limit           query     int     false  "Number of items per page"
+// @Param        order_by        query     string  false  "Field to sort by"
+// @Param        order_direction query     string  false  "Sort direction (asc/desc)"
+// @Param        search          query     string  false  "Search query to filter bookings"
+// @Param        status          query     string  false  "Filter by booking status"
+// @Param        user_id         query     string  false  "Filter by user ID"
+// @Success      200             {object}  response.Success  "List of bookings retrieved successfully"
+// @Failure      404             {object}  response.Error    "No bookings found"
+// @Failure      500             {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /booking/list [get]
+func (h *HandlerBooking) Fetch(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][HandlerBooking][Fetch]", logId)
+	authData := utils.GetAuthData(ctx)
+
+	params, _ := filter.GetBaseParams(ctx, "updated_at", "desc", 10)
+	params.Filters = filter.WhitelistFilter(params.Filters, []string{"user_id", "status"})
+
+	userId := utils.InterfaceString(authData["user_id"])
+	if utils.InterfaceString(authData["role"]) == utils.RoleCustomer {
+		params.Filters["user_id"] = userId
+	}
+
+	bookings, totalData, err := h.Service.Fetch(params)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Fetch; Error: %+v", logPrefix, err))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			res := response.Response(http.StatusNotFound, messages.NotFound, logId, nil)
+			res.Error = "List booking not found"
+			ctx.JSON(http.StatusNotFound, res)
+			return
+		}
+
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := response.PaginationResponse(http.StatusOK, int(totalData), params.Page, params.Limit, logId, bookings)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(bookings)))
+	ctx.JSON(http.StatusOK, res)
 }

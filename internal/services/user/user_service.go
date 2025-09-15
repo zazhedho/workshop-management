@@ -6,6 +6,7 @@ import (
 	"workshop-management/internal/domain/auth"
 	"workshop-management/internal/domain/user"
 	"workshop-management/internal/dto"
+	"workshop-management/pkg/filter"
 	"workshop-management/utils"
 
 	"golang.org/x/crypto/bcrypt"
@@ -87,8 +88,8 @@ func (s *ServiceUser) GetUserByAuth(id string) (user.Users, error) {
 	return s.UserRepo.GetByID(id)
 }
 
-func (s *ServiceUser) GetAllUsers(page, limit int, orderBy, orderDir, search string) ([]user.Users, int64, error) {
-	return s.UserRepo.GetAll(page, limit, orderBy, orderDir, search)
+func (s *ServiceUser) GetAllUsers(params filter.BaseParams) ([]user.Users, int64, error) {
+	return s.UserRepo.GetAll(params)
 }
 
 func (s *ServiceUser) Update(id string, req dto.UserUpdate) (user.Users, error) {

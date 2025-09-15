@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"workshop-management/internal/dto"
 	"workshop-management/internal/services/vehicle"
+	"workshop-management/pkg/filter"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
@@ -139,26 +140,18 @@ func (h *HandlerVehicle) Fetch(ctx *gin.Context) {
 	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Fetch]", logId)
 	authData := utils.GetAuthData(ctx)
 
-	var userId string
-	isCustomer := utils.InterfaceString(authData["role"]) == utils.RoleCustomer
-	if isCustomer {
-		userId = utils.InterfaceString(authData["user_id"])
+	params, _ := filter.GetBaseParams(ctx, "updated_at", "desc", 10)
+	params.Filters = filter.WhitelistFilter(params.Filters, []string{"user_id", "brand", "model", "year", "color"})
+
+	userId := utils.InterfaceString(authData["user_id"])
+	if utils.InterfaceString(authData["role"]) == utils.RoleCustomer {
+		params.Filters["user_id"] = userId
+	}
+	if params.Filters["year"] != nil {
+		params.Filters["year"] = strconv.Itoa(int(params.Filters["year"].(float64)))
 	}
 
-	//query parameters
-	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-	orderBy := ctx.DefaultQuery("order_by", "updated_at")
-	orderDir := ctx.DefaultQuery("order_direction", "desc")
-	search := ctx.Query("search")
-
-	vehicles, totalData, err := h.Service.Fetch(page, limit, orderBy, orderDir, search, userId)
+	vehicles, totalData, err := h.Service.Fetch(params)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Fetch; Error: %+v", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -174,7 +167,7 @@ func (h *HandlerVehicle) Fetch(ctx *gin.Context) {
 		return
 	}
 
-	res := response.PaginationResponse(http.StatusOK, int(totalData), page, limit, logId, vehicles)
+	res := response.PaginationResponse(http.StatusOK, int(totalData), params.Page, params.Limit, logId, vehicles)
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(vehicles)))
 	ctx.JSON(http.StatusOK, res)
 }

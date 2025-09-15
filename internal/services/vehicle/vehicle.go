@@ -5,6 +5,7 @@ import (
 	"time"
 	"workshop-management/internal/domain/vehicle"
 	"workshop-management/internal/dto"
+	"workshop-management/pkg/filter"
 	"workshop-management/utils"
 )
 
@@ -41,8 +42,8 @@ func (s *ServiceVehicle) GetById(id string) (vehicle.Vehicle, error) {
 	return s.VehicleRepo.GetById(id)
 }
 
-func (s *ServiceVehicle) Fetch(page, limit int, orderBy, orderDir, search, userId string) ([]vehicle.Vehicle, int64, error) {
-	return s.VehicleRepo.Fetch(page, limit, orderBy, orderDir, search, userId)
+func (s *ServiceVehicle) Fetch(params filter.BaseParams) ([]vehicle.Vehicle, int64, error) {
+	return s.VehicleRepo.Fetch(params)
 }
 
 func (s *ServiceVehicle) Update(id, userId string, req dto.UpdateVehicle) (int64, error) {

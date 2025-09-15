@@ -4,6 +4,7 @@ import (
 	"time"
 	"workshop-management/internal/domain/booking"
 	"workshop-management/internal/dto"
+	"workshop-management/pkg/filter"
 	"workshop-management/utils"
 )
 
@@ -49,4 +50,17 @@ func (s *ServiceBooking) Create(userId string, req dto.CreateBooking) (booking.B
 	}
 
 	return bookingData, nil
+}
+
+func (s *ServiceBooking) GetByID(id string) (booking.Booking, error) {
+	bookingData, err := s.BookingRepo.GetById(id)
+	if err != nil {
+		return booking.Booking{}, err
+	}
+
+	return bookingData, nil
+}
+
+func (s *ServiceBooking) Fetch(params filter.BaseParams) ([]booking.Booking, int64, error) {
+	return s.BookingRepo.Fetch(params)
 }

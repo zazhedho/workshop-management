@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	"strings"
 	"workshop-management/internal/domain/service"
+	"workshop-management/pkg/filter"
 
 	"gorm.io/gorm"
 )
@@ -20,19 +20,41 @@ func (r *repo) Store(m service.Service) error {
 	return r.DB.Create(&m).Error
 }
 
-func (r *repo) Fetch(page, limit int, orderBy, orderDir, search string) (ret []service.Service, totalData int64, err error) {
-	query := r.DB.Table(service.Service{}.TableName()).Debug()
+func (r *repo) Fetch(params filter.BaseParams) (ret []service.Service, totalData int64, err error) {
+	query := r.DB.Model(&service.Service{}).Debug()
 
-	if strings.TrimSpace(search) != "" {
-		searchPattern := "%" + search + "%"
+	if len(params.Columns) > 0 {
+		query = query.Select(params.Columns)
+	}
+
+	if params.Search != "" {
+		searchPattern := "%" + params.Search + "%"
 		query = query.Where("LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)", searchPattern, searchPattern)
 	}
 
-	if err := query.Where("deleted_at IS NULL").Count(&totalData).Error; err != nil {
+	for key, value := range params.Filters {
+		if value == nil {
+			continue
+		}
+
+		switch v := value.(type) {
+		case string:
+			if v == "" {
+				continue
+			}
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		case []string, []int:
+			query = query.Where(fmt.Sprintf("%s IN ?", key), v)
+		default:
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		}
+	}
+
+	if err = query.Count(&totalData).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if orderBy != "" && orderDir != "" {
+	if params.OrderBy != "" && params.OrderDirection != "" {
 		validColumns := map[string]bool{
 			"name":       true,
 			"price":      true,
@@ -40,28 +62,15 @@ func (r *repo) Fetch(page, limit int, orderBy, orderDir, search string) (ret []s
 			"updated_at": true,
 		}
 
-		validDirections := map[string]bool{
-			"asc":  true,
-			"desc": true,
+		if _, ok := validColumns[params.OrderBy]; !ok {
+			return nil, 0, fmt.Errorf("invalid orderBy column: %s", params.OrderBy)
 		}
 
-		if _, ok := validColumns[orderBy]; !ok {
-			return nil, 0, fmt.Errorf("invalid orderBy column: %s", orderBy)
-		}
-		if _, ok := validDirections[orderDir]; !ok {
-			return nil, 0, fmt.Errorf("invalid orderDir: %s", orderDir)
-		}
-
-		query = query.Order(fmt.Sprintf("%s %s", orderBy, orderDir))
+		query = query.Order(fmt.Sprintf("%s %s", params.OrderBy, params.OrderDirection))
 	}
 
-	if limit > 0 {
-		offset := (page - 1) * limit
-		query = query.Offset(offset).Limit(limit)
-	}
-
-	if err = query.Find(&ret).Error; err != nil {
-		return ret, 0, err
+	if err := query.Offset(params.Offset).Limit(params.Limit).Find(&ret).Error; err != nil {
+		return nil, 0, err
 	}
 
 	return ret, totalData, nil

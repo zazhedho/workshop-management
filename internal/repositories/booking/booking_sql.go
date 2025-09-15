@@ -1,8 +1,10 @@
 package booking
 
 import (
+	"fmt"
 	"workshop-management/internal/domain/booking"
 	"workshop-management/internal/domain/service"
+	"workshop-management/pkg/filter"
 
 	"gorm.io/gorm"
 )
@@ -42,4 +44,76 @@ func (r *repo) GetServicesByIDs(serviceIDs []string) ([]service.Service, error) 
 		return nil, err
 	}
 	return services, nil
+}
+
+func (r *repo) GetById(id string) (booking.Booking, error) {
+	var m booking.Booking
+	if err := r.DB.Preload("Services").Where("id = ?", id).First(&m).Error; err != nil {
+		return booking.Booking{}, err
+	}
+	return m, nil
+}
+
+func (r *repo) GetBookingServicesByBookingId(bookingId string) ([]booking.BookService, error) {
+	var bookingServices []booking.BookService
+	if err := r.DB.Where("booking_id = ?", bookingId).Find(&bookingServices).Error; err != nil {
+		return nil, err
+	}
+	return bookingServices, nil
+}
+
+func (r *repo) Fetch(params filter.BaseParams) (bookings []booking.Booking, totalData int64, err error) {
+	query := r.DB.Model(&booking.Booking{}).Debug()
+
+	if len(params.Columns) > 0 {
+		query = query.Select(params.Columns)
+	}
+
+	if params.Search != "" {
+		query = query.Where("LOWER(notes) LIKE LOWER(?)", "%"+params.Search+"%")
+	}
+
+	// apply filters
+	for key, value := range params.Filters {
+		if value == nil {
+			continue
+		}
+
+		switch v := value.(type) {
+		case string:
+			if v == "" {
+				continue
+			}
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		case []string, []int:
+			query = query.Where(fmt.Sprintf("%s IN ?", key), v)
+		default:
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		}
+	}
+
+	if err = query.Count(&totalData).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if params.OrderBy != "" && params.OrderDirection != "" {
+		validColumns := map[string]bool{
+			"booking_date": true,
+			"status":       true,
+			"created_at":   true,
+			"updated_at":   true,
+		}
+
+		if _, ok := validColumns[params.OrderBy]; !ok {
+			return nil, 0, fmt.Errorf("invalid orderBy column: %s", params.OrderBy)
+		}
+
+		query = query.Order(fmt.Sprintf("%s %s", params.OrderBy, params.OrderDirection))
+	}
+
+	if err := query.Offset(params.Offset).Limit(params.Limit).Find(&bookings).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return bookings, totalData, nil
 }

@@ -122,5 +122,7 @@ func (r *Routes) BookingRoutes() {
 	booking := r.App.Group("/api/bookings").Use(mdw.AuthMiddleware())
 	{
 		booking.POST("", h.Create)
+		booking.GET("/:id", h.GetBookingById)
+		booking.GET("", h.Fetch)
 	}
 }

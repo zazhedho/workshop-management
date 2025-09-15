@@ -4,6 +4,7 @@ import (
 	"time"
 	"workshop-management/internal/domain/service"
 	"workshop-management/internal/dto"
+	"workshop-management/pkg/filter"
 	"workshop-management/utils"
 )
 
@@ -34,8 +35,8 @@ func (s *SrvService) Create(userId string, req dto.AddService) (service.Service,
 	return data, nil
 }
 
-func (s *SrvService) Fetch(page, limit int, orderBy, orderDir, search string) ([]service.Service, int64, error) {
-	return s.ServiceRepo.Fetch(page, limit, orderBy, orderDir, search)
+func (s *SrvService) Fetch(params filter.BaseParams) ([]service.Service, int64, error) {
+	return s.ServiceRepo.Fetch(params)
 }
 
 func (s *SrvService) GetById(id string) (service.Service, error) {
