@@ -22,5 +22,5 @@ type Vehicle struct {
 	UpdatedAt    time.Time      `json:"updated_at"`
 	UpdatedBy    string         `json:"updated_by"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-	DeletedBy    string         `json:"deleted_by"`
+	DeletedBy    string         `json:"-"`
 }

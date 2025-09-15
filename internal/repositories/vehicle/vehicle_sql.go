@@ -2,8 +2,8 @@ package repository
 
 import (
 	"fmt"
-	"strings"
 	"workshop-management/internal/domain/vehicle"
+	"workshop-management/pkg/filter"
 
 	"gorm.io/gorm"
 )
@@ -12,7 +12,7 @@ type repo struct {
 	DB *gorm.DB
 }
 
-func NewVehicleRepo(db *gorm.DB) vehicle.Repository {
+func NewVehicleRepo(db *gorm.DB) vehicle.RepoVehicle {
 	return &repo{DB: db}
 }
 
@@ -20,22 +20,37 @@ func (r *repo) Store(m vehicle.Vehicle) error {
 	return r.DB.Create(&m).Error
 }
 
-func (r *repo) FetchVehicles(page, limit int, orderBy, orderDir, search, userId string) (ret []vehicle.Vehicle, totalData int64, err error) {
-	query := r.DB.Table(vehicle.Vehicle{}.TableName())
+func (r *repo) Fetch(params filter.BaseParams) (ret []vehicle.Vehicle, totalData int64, err error) {
+	query := r.DB.Model(&vehicle.Vehicle{}).Debug()
 
-	if userId != "" {
-		query = query.Where("user_id = ?", userId)
-	}
-	if strings.TrimSpace(search) != "" {
-		searchPattern := "%" + search + "%"
+	if params.Search != "" {
+		searchPattern := "%" + params.Search + "%"
 		query = query.Where("LOWER(license_plate) LIKE LOWER(?) OR LOWER(brand) LIKE LOWER(?) OR LOWER(model) LIKE LOWER(?) OR year LIKE ? OR LOWER(color) LIKE LOWER(?)", searchPattern, searchPattern, searchPattern, searchPattern, searchPattern)
+	}
+
+	for key, value := range params.Filters {
+		if value == nil {
+			continue
+		}
+
+		switch v := value.(type) {
+		case string:
+			if v == "" {
+				continue
+			}
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		case []string, []int:
+			query = query.Where(fmt.Sprintf("%s IN ?", key), v)
+		default:
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		}
 	}
 
 	if err := query.Count(&totalData).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if orderBy != "" && orderDir != "" {
+	if params.OrderBy != "" && params.OrderDirection != "" {
 		validColumns := map[string]bool{
 			"license_plate": true,
 			"brand":         true,
@@ -45,34 +60,21 @@ func (r *repo) FetchVehicles(page, limit int, orderBy, orderDir, search, userId 
 			"updated_at":    true,
 		}
 
-		validDirections := map[string]bool{
-			"asc":  true,
-			"desc": true,
+		if _, ok := validColumns[params.OrderBy]; !ok {
+			return nil, 0, fmt.Errorf("invalid orderBy column: %s", params.OrderBy)
 		}
 
-		if _, ok := validColumns[orderBy]; !ok {
-			return nil, 0, fmt.Errorf("invalid orderBy column: %s", orderBy)
-		}
-		if _, ok := validDirections[orderDir]; !ok {
-			return nil, 0, fmt.Errorf("invalid orderDir: %s", orderDir)
-		}
-
-		query = query.Order(fmt.Sprintf("%s %s", orderBy, orderDir))
+		query = query.Order(fmt.Sprintf("%s %s", params.OrderBy, params.OrderDirection))
 	}
 
-	if limit > 0 {
-		offset := (page - 1) * limit
-		query = query.Offset(offset).Limit(limit)
-	}
-
-	if err = query.Find(&ret).Error; err != nil {
-		return ret, 0, err
+	if err := query.Offset(params.Offset).Limit(params.Limit).Find(&ret).Error; err != nil {
+		return nil, 0, err
 	}
 
 	return ret, totalData, nil
 }
 
-func (r *repo) GetVehicle(id string) (vehicle.Vehicle, error) {
+func (r *repo) GetById(id string) (vehicle.Vehicle, error) {
 	var m vehicle.Vehicle
 	if err := r.DB.Where("id = ?", id).First(&m).Error; err != nil {
 		return m, err
@@ -80,8 +82,8 @@ func (r *repo) GetVehicle(id string) (vehicle.Vehicle, error) {
 	return m, nil
 }
 
-func (r *repo) UpdateVehicle(id string, data interface{}) (int64, error) {
-	res := r.DB.Where("id = ?", id).Updates(data)
+func (r *repo) Update(m vehicle.Vehicle, data interface{}) (int64, error) {
+	res := r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data)
 	if res.Error != nil {
 		return 0, res.Error
 	}
@@ -89,6 +91,6 @@ func (r *repo) UpdateVehicle(id string, data interface{}) (int64, error) {
 	return res.RowsAffected, nil
 }
 
-func (r *repo) DeleteVehicle(m vehicle.Vehicle, data interface{}) error {
+func (r *repo) Delete(m vehicle.Vehicle, data interface{}) error {
 	return r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data).Error
 }

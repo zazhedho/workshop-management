@@ -1,9 +1,11 @@
 package vehicle
 
-type Repository interface {
+import "workshop-management/pkg/filter"
+
+type RepoVehicle interface {
 	Store(m Vehicle) error
-	FetchVehicles(page, limit int, orderBy, orderDir, search, userId string) ([]Vehicle, int64, error)
-	GetVehicle(id string) (Vehicle, error)
-	UpdateVehicle(id string, data interface{}) (int64, error)
-	DeleteVehicle(m Vehicle, data interface{}) error
+	Fetch(params filter.BaseParams) ([]Vehicle, int64, error)
+	GetById(id string) (Vehicle, error)
+	Update(m Vehicle, data interface{}) (int64, error)
+	Delete(m Vehicle, data interface{}) error
 }

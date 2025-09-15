@@ -1,6 +1,6 @@
 package auth
 
-type Repository interface {
+type RepoAuth interface {
 	Store(m Blacklist) error
 	GetByToken(token string) (Blacklist, error)
 }

@@ -18,3 +18,13 @@ const (
 	RoleMechanic = "mechanic"
 	RoleCashier  = "cashier"
 )
+
+const (
+	StsPending    = "pending"
+	StsConfirmed  = "confirmed"
+	StsCancelled  = "cancelled"
+	StsCompleted  = "completed"
+	StsOnProgress = "on progress"
+	StsApproved   = "approved"
+	StsRejected   = "rejected"
+)

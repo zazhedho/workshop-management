@@ -6,17 +6,18 @@ import (
 	"workshop-management/internal/domain/auth"
 	"workshop-management/internal/domain/user"
 	"workshop-management/internal/dto"
+	"workshop-management/pkg/filter"
 	"workshop-management/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type ServiceUser struct {
-	UserRepo      user.Repository
-	BlacklistRepo auth.Repository
+	UserRepo      user.RepoUser
+	BlacklistRepo auth.RepoAuth
 }
 
-func NewUserService(userRepo user.Repository, blacklistRepo auth.Repository) *ServiceUser {
+func NewUserService(userRepo user.RepoUser, blacklistRepo auth.RepoAuth) *ServiceUser {
 	return &ServiceUser{
 		UserRepo:      userRepo,
 		BlacklistRepo: blacklistRepo,
@@ -87,11 +88,11 @@ func (s *ServiceUser) GetUserByAuth(id string) (user.Users, error) {
 	return s.UserRepo.GetByID(id)
 }
 
-func (s *ServiceUser) GetAllUsers(page, limit int, orderBy, orderDir, search string) ([]user.Users, int64, error) {
-	return s.UserRepo.GetAll(page, limit, orderBy, orderDir, search)
+func (s *ServiceUser) GetAllUsers(params filter.BaseParams) ([]user.Users, int64, error) {
+	return s.UserRepo.GetAll(params)
 }
 
-func (s *ServiceUser) UpdateUser(id string, req dto.UserUpdate) (user.Users, error) {
+func (s *ServiceUser) Update(id string, req dto.UserUpdate) (user.Users, error) {
 	data, err := s.UserRepo.GetByID(id)
 	if err != nil {
 		return user.Users{}, err
@@ -130,6 +131,6 @@ func (s *ServiceUser) UpdateUser(id string, req dto.UserUpdate) (user.Users, err
 	return data, nil
 }
 
-func (s *ServiceUser) DeleteUser(id string) error {
+func (s *ServiceUser) Delete(id string) error {
 	return s.UserRepo.Delete(id)
 }

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strconv"
 	"workshop-management/internal/dto"
 	"workshop-management/internal/services/user"
+	"workshop-management/pkg/filter"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
@@ -237,33 +237,28 @@ func (h *HandlerUser) GetUserByAuth(ctx *gin.Context) {
 }
 
 // GetAllUsers godoc
-// @Summary Get all users
-// @Description Get all users
-// @Tags Users
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} response.Success
-// @Failure 500 {object} response.Error
-// @Security ApiKeyAuth
-// @Router /users [get]
+// @Summary      Get all users
+// @Description  Get all users
+// @Tags         Users
+// @Accept       json
+// @Produce  	 json
+// @Param        page            query     int     false  "Page number for pagination"
+// @Param        limit           query     int     false  "Number of items per page"
+// @Param        order_by        query     string  false  "Field to sort by"
+// @Param        order_direction query     string  false  "Sort direction (asc/desc)"
+// @Param        search          query     string  false  "Search query to filter vehicles"
+// @Success      200             {object}  response.Success
+// @Failure      500             {object}  response.Error
+// @Security     ApiKeyAuth
+// @Router       /users [get]
 func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][UserHandler][GetAllUsers]", logId)
 
-	//query parameters
-	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-	orderBy := ctx.DefaultQuery("order_by", "updated_at")
-	orderDir := ctx.DefaultQuery("order_direction", "desc")
-	search := ctx.Query("search")
+	params, _ := filter.GetBaseParams(ctx, "updated_at", "desc", 10)
+	params.Filters = filter.WhitelistFilter(params.Filters, []string{"role"})
 
-	users, totalData, err := h.Service.GetAllUsers(page, limit, orderBy, orderDir, search)
+	users, totalData, err := h.Service.GetAllUsers(params)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; GetAllUsers; ERROR: %+v;", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
@@ -272,12 +267,12 @@ func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 		return
 	}
 
-	res := response.PaginationResponse(http.StatusOK, int(totalData), page, limit, logId, users)
+	res := response.PaginationResponse(http.StatusOK, int(totalData), params.Page, params.Limit, logId, users)
 	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(users)))
 	ctx.JSON(http.StatusOK, res)
 }
 
-// UpdateUser godoc
+// Update godoc
 // @Summary Update a user
 // @Description Update a user
 // @Tags Users
@@ -291,12 +286,12 @@ func (h *HandlerUser) GetAllUsers(ctx *gin.Context) {
 // @Failure 500 {object} response.Error
 // @Security ApiKeyAuth
 // @Router /user [put]
-func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
+func (h *HandlerUser) Update(ctx *gin.Context) {
 	var req dto.UserUpdate
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][UserHandler][UpdateUser]", logId)
+	logPrefix := fmt.Sprintf("[%s][UserHandler][Update]", logId)
 
 	if err := ctx.BindJSON(&req); err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
@@ -307,9 +302,9 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.Service.UpdateUser(userId, req)
+	data, err := h.Service.Update(userId, req)
 	if err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.UpdateUser; ERROR: %s;", logPrefix, err))
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Update; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
@@ -328,7 +323,7 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-// DeleteUser godoc
+// Delete godoc
 // @Summary Delete a user
 // @Description Delete a user
 // @Tags Users
@@ -339,15 +334,15 @@ func (h *HandlerUser) UpdateUser(ctx *gin.Context) {
 // @Failure 404 {object} response.Error
 // @Failure 500 {object} response.Error
 // @Security ApiKeyAuth
-// @Router /user/{id} [delete]
-func (h *HandlerUser) DeleteUser(ctx *gin.Context) {
+// @Router /user [delete]
+func (h *HandlerUser) Delete(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
-	logPrefix := fmt.Sprintf("[%s][UserHandler][DeleteUser]", logId)
+	logPrefix := fmt.Sprintf("[%s][UserHandler][Delete]", logId)
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
 
-	if err := h.Service.DeleteUser(userId); err != nil {
-		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.DeleteUser; ERROR: %s;", logPrefix, err))
+	if err := h.Service.Delete(userId); err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.Delete; ERROR: %s;", logPrefix, err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
 			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}

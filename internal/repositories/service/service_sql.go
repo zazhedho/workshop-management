@@ -1,8 +1,8 @@
-package repository
+package service
 
 import (
 	"fmt"
-	"workshop-management/internal/domain/user"
+	"workshop-management/internal/domain/service"
 	"workshop-management/pkg/filter"
 
 	"gorm.io/gorm"
@@ -12,35 +12,24 @@ type repo struct {
 	DB *gorm.DB
 }
 
-func NewUserRepo(db *gorm.DB) user.RepoUser {
+func NewServiceRepo(db *gorm.DB) service.RepoService {
 	return &repo{DB: db}
 }
 
-func (r *repo) Store(m user.Users) error {
+func (r *repo) Store(m service.Service) error {
 	return r.DB.Create(&m).Error
 }
 
-func (r *repo) GetByEmail(email string) (ret user.Users, err error) {
-	if err = r.DB.Where("email = ?", email).First(&ret).Error; err != nil {
-		return user.Users{}, err
+func (r *repo) Fetch(params filter.BaseParams) (ret []service.Service, totalData int64, err error) {
+	query := r.DB.Model(&service.Service{}).Debug()
+
+	if len(params.Columns) > 0 {
+		query = query.Select(params.Columns)
 	}
-
-	return ret, nil
-}
-
-func (r *repo) GetByID(id string) (ret user.Users, err error) {
-	if err = r.DB.Where("id = ?", id).First(&ret).Error; err != nil {
-		return user.Users{}, err
-	}
-	return ret, nil
-}
-
-func (r *repo) GetAll(params filter.BaseParams) (ret []user.Users, totalData int64, err error) {
-	query := r.DB.Model(&user.Users{}).Debug()
 
 	if params.Search != "" {
 		searchPattern := "%" + params.Search + "%"
-		query = query.Where("LOWER(name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?) OR LOWER(phone) LIKE LOWER(?)", searchPattern, searchPattern, searchPattern)
+		query = query.Where("LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)", searchPattern, searchPattern)
 	}
 
 	for key, value := range params.Filters {
@@ -61,16 +50,14 @@ func (r *repo) GetAll(params filter.BaseParams) (ret []user.Users, totalData int
 		}
 	}
 
-	if err := query.Count(&totalData).Error; err != nil {
+	if err = query.Count(&totalData).Error; err != nil {
 		return nil, 0, err
 	}
 
 	if params.OrderBy != "" && params.OrderDirection != "" {
 		validColumns := map[string]bool{
 			"name":       true,
-			"email":      true,
-			"phone":      true,
-			"role":       true,
+			"price":      true,
 			"created_at": true,
 			"updated_at": true,
 		}
@@ -89,10 +76,22 @@ func (r *repo) GetAll(params filter.BaseParams) (ret []user.Users, totalData int
 	return ret, totalData, nil
 }
 
-func (r *repo) Update(m user.Users) error {
-	return r.DB.Save(&m).Error
+func (r *repo) GetById(id string) (service.Service, error) {
+	var m service.Service
+	if err := r.DB.Where("id = ?", id).First(&m).Error; err != nil {
+		return service.Service{}, err
+	}
+	return m, nil
 }
 
-func (r *repo) Delete(id string) error {
-	return r.DB.Where("id = ?", id).Delete(&user.Users{}).Error
+func (r *repo) Update(m service.Service, data interface{}) (int64, error) {
+	res := r.DB.Table(m.TableName()).Where("id = ?", m.Id).Updates(data)
+	if res.Error != nil {
+		return 0, nil
+	}
+	return res.RowsAffected, nil
+}
+
+func (r *repo) Delete(m service.Service, data interface{}) error {
+	return r.DB.Model(&m).Where("id = ?", m.Id).Updates(data).Error
 }

@@ -97,6 +97,9 @@ func main() {
 
 	routes.UserRoutes()
 	routes.VehicleRoutes()
+	routes.ServiceRoutes()
+	routes.BookingRoutes()
+
 	err = routes.App.Run(fmt.Sprintf(":%s", port))
 	FailOnError(err, "Failed run service")
 }
