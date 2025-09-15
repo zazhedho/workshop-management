@@ -26,6 +26,18 @@ func NewServiceHandler(s *service.SrvService) *HandlerService {
 	return &HandlerService{Service: s}
 }
 
+// Create godoc
+// @Summary Create a new service
+// @Description Create a new service with the given information
+// @Tags Services
+// @Accept json
+// @Produce json
+// @Param service body dto.AddService true "Service information"
+// @Success 201 {object} response.Success
+// @Failure 400 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Security ApiKeyAuth
+// @Router /service [post]
 func (h *HandlerService) Create(ctx *gin.Context) {
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
@@ -57,6 +69,22 @@ func (h *HandlerService) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, res)
 }
 
+// Fetch godoc
+// @Summary Fetch services
+// @Description Fetch services with optional filters
+// @Tags Services
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number for pagination"
+// @Param limit query int false "Number of items per page"
+// @Param order_by query string false "Field to sort by"
+// @Param order_direction query string false "Sort direction (asc/desc)"
+// @Param search query string false "Search query to filter services"
+// @Param filters[price] query string false "Filter by price"
+// @Success 200 {object} response.Success
+// @Failure 500 {object} response.Error
+// @Router /services [get]
+// @Security ApiKeyAuth
 func (h *HandlerService) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerService][Fetch]", logId)
@@ -78,6 +106,18 @@ func (h *HandlerService) Fetch(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// GetById godoc
+// @Summary Get a service by ID
+// @Description Get a service by its ID
+// @Tags Services
+// @Accept json
+// @Produce json
+// @Param id path string true "Service ID"
+// @Success 200 {object} response.Success
+// @Failure 404 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Router /service/{id} [get]
+// @Security ApiKeyAuth
 func (h *HandlerService) GetById(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerService][GetById]", logId)
@@ -108,6 +148,20 @@ func (h *HandlerService) GetById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// Update godoc
+// @Summary Update a service
+// @Description Update a service with the given information
+// @Tags Services
+// @Accept json
+// @Produce json
+// @Param id path string true "Service ID"
+// @Param service body dto.UpdateService true "Service information"
+// @Success 200 {object} response.Success
+// @Failure 400 {object} response.Error
+// @Failure 404 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Router /service/{id} [put]
+// @Security ApiKeyAuth
 func (h *HandlerService) Update(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerService][Update]", logId)
@@ -150,6 +204,18 @@ func (h *HandlerService) Update(ctx *gin.Context) {
 	return
 }
 
+// Delete godoc
+// @Summary Delete a service
+// @Description Delete a service by its ID
+// @Tags Services
+// @Accept json
+// @Produce json
+// @Param id path string true "Service ID"
+// @Success 200 {object} response.Success
+// @Failure 404 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Router /service/{id} [delete]
+// @Security ApiKeyAuth
 func (h *HandlerService) Delete(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerService][Delete]", logId)

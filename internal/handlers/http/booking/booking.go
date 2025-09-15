@@ -25,6 +25,18 @@ func NewBookingHandler(s *booking.ServiceBooking) *HandlerBooking {
 	return &HandlerBooking{Service: s}
 }
 
+// Create godoc
+// @Summary      Create a new booking
+// @Description  Create a new booking with the provided details.
+// @Tags         Bookings
+// @Accept       json
+// @Produce      json
+// @Param        booking  body      dto.CreateBooking  true  "Booking details to be created"
+// @Success      201      {object}  response.Success  "Booking created successfully"
+// @Failure      400      {object}  response.Error    "Invalid request body"
+// @Failure      500      {object}  response.Error    "Internal server error"
+// @Security     ApiKeyAuth
+// @Router       /booking [post]
 func (h *HandlerBooking) Create(ctx *gin.Context) {
 	authData := utils.GetAuthData(ctx)
 	userId := utils.InterfaceString(authData["user_id"])
@@ -104,18 +116,18 @@ func (h *HandlerBooking) GetBookingById(ctx *gin.Context) {
 // @Tags         Bookings
 // @Accept       json
 // @Produce      json
-// @Param        page            query     int     false  "Page number for pagination"
-// @Param        limit           query     int     false  "Number of items per page"
-// @Param        order_by        query     string  false  "Field to sort by"
-// @Param        order_direction query     string  false  "Sort direction (asc/desc)"
-// @Param        search          query     string  false  "Search query to filter bookings"
-// @Param        status          query     string  false  "Filter by booking status"
-// @Param        user_id         query     string  false  "Filter by user ID"
-// @Success      200             {object}  response.Success  "List of bookings retrieved successfully"
-// @Failure      404             {object}  response.Error    "No bookings found"
-// @Failure      500             {object}  response.Error    "Internal server error"
+// @Param        page             query     int     false  "Page number for pagination"
+// @Param        limit            query     int     false  "Number of items per page"
+// @Param        order_by         query     string  false  "Field to sort by"
+// @Param        order_direction  query     string  false  "Sort direction (asc/desc)"
+// @Param        search           query     string  false  "Search query to filter bookings"
+// @Param        filters[status]  query     string  false  "Filter by booking status"
+// @Param        filters[user_id] query     string  false  "Filter by user ID"
+// @Success      200              {object}  response.Success  "List of bookings retrieved successfully"
+// @Failure      404              {object}  response.Error    "No bookings found"
+// @Failure      500              {object}  response.Error    "Internal server error"
 // @Security     ApiKeyAuth
-// @Router       /booking/list [get]
+// @Router       /bookings [get]
 func (h *HandlerBooking) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerBooking][Fetch]", logId)

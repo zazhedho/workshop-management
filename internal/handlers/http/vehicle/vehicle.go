@@ -134,7 +134,7 @@ func (h *HandlerVehicle) GetById(ctx *gin.Context) {
 // @Failure      404             {object}  response.Error    "No vehicles found"
 // @Failure      500             {object}  response.Error    "Internal server error"
 // @Security     ApiKeyAuth
-// @Router       /vehicle/list [get]
+// @Router       /vehicles [get]
 func (h *HandlerVehicle) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerVehicle][Fetch]", logId)

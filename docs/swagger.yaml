@@ -1,5 +1,16 @@
 basePath: /api
 definitions:
+  dto.AddService:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+    required:
+    - name
+    type: object
   dto.AddVehicle:
     properties:
       brand:
@@ -23,6 +34,23 @@ definitions:
     - model
     - year
     type: object
+  dto.CreateBooking:
+    properties:
+      booking_date:
+        type: string
+      notes:
+        type: string
+      service_ids:
+        items:
+          type: string
+        type: array
+      vehicle_id:
+        type: string
+    required:
+    - booking_date
+    - service_ids
+    - vehicle_id
+    type: object
   dto.Login:
     properties:
       email:
@@ -34,6 +62,15 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.UpdateService:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
     type: object
   dto.UpdateVehicle:
     properties:
@@ -131,6 +168,302 @@ info:
   title: Workshop Management API
   version: "1.0"
 paths:
+  /booking:
+    post:
+      consumes:
+      - application/json
+      description: Create a new booking with the provided details.
+      parameters:
+      - description: Booking details to be created
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateBooking'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Booking created successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new booking
+      tags:
+      - Bookings
+  /booking/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve booking details using the booking ID.
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Booking details retrieved successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: Booking not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a booking by ID
+      tags:
+      - Bookings
+  /bookings:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of bookings with optional filters and pagination.
+      parameters:
+      - description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Field to sort by
+        in: query
+        name: order_by
+        type: string
+      - description: Sort direction (asc/desc)
+        in: query
+        name: order_direction
+        type: string
+      - description: Search query to filter bookings
+        in: query
+        name: search
+        type: string
+      - description: Filter by booking status
+        in: query
+        name: filters[status]
+        type: string
+      - description: Filter by user ID
+        in: query
+        name: filters[user_id]
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of bookings retrieved successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: No bookings found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a list of bookings
+      tags:
+      - Bookings
+  /service:
+    post:
+      consumes:
+      - application/json
+      description: Create a new service with the given information
+      parameters:
+      - description: Service information
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddService'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new service
+      tags:
+      - Services
+  /service/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a service by its ID
+      parameters:
+      - description: Service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a service
+      tags:
+      - Services
+    get:
+      consumes:
+      - application/json
+      description: Get a service by its ID
+      parameters:
+      - description: Service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a service by ID
+      tags:
+      - Services
+    put:
+      consumes:
+      - application/json
+      description: Update a service with the given information
+      parameters:
+      - description: Service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Service information
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateService'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a service
+      tags:
+      - Services
+  /services:
+    get:
+      consumes:
+      - application/json
+      description: Fetch services with optional filters
+      parameters:
+      - description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Field to sort by
+        in: query
+        name: order_by
+        type: string
+      - description: Sort direction (asc/desc)
+        in: query
+        name: order_direction
+        type: string
+      - description: Search query to filter services
+        in: query
+        name: search
+        type: string
+      - description: Filter by price
+        in: query
+        name: filters[price]
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Fetch services
+      tags:
+      - Services
   /user:
     delete:
       consumes:
@@ -513,7 +846,7 @@ paths:
       summary: Update a vehicle
       tags:
       - Vehicles
-  /vehicle/list:
+  /vehicles:
     get:
       consumes:
       - application/json
