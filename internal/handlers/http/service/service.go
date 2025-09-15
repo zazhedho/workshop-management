@@ -83,7 +83,6 @@ func (h *HandlerService) Create(ctx *gin.Context) {
 // @Param filters[price] query string false "Filter by price"
 // @Success 200 {object} response.Success
 // @Failure 500 {object} response.Error
-// @Security ApiKeyAuth
 // @Router /services [get]
 func (h *HandlerService) Fetch(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
@@ -117,7 +116,6 @@ func (h *HandlerService) Fetch(ctx *gin.Context) {
 // @Failure 404 {object} response.Error
 // @Failure 500 {object} response.Error
 // @Router /service/{id} [get]
-// @Security ApiKeyAuth
 func (h *HandlerService) GetById(ctx *gin.Context) {
 	logId := utils.GenerateLogId(ctx)
 	logPrefix := fmt.Sprintf("[%s][HandlerService][GetById]", logId)
