@@ -1,16 +1,31 @@
-FROM alpine:latest
-RUN apk add --no-cache tzdata
-ENV TZ=Asia/Jakarta
+# Stage 1: Build the Go application
+FROM golang:latest AS builder
 
 WORKDIR /app
 
-ARG SERVICE_NAME
-ENV SERVICE_NAME=${SERVICE_NAME}
+# Copy go.mod and go.sum to download dependencies first
+COPY go.mod go.sum ./
+RUN go mod download
 
-COPY ${SERVICE_NAME} .
-COPY entrypoint.sh .
-#COPY .env . #parsing in docker run
-#COPY config config
+# Copy the rest of the source code
+COPY . .
 
-RUN chmod +x entrypoint.sh
-ENTRYPOINT ["./entrypoint.sh"]
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+
+# Stage 2: Create the final image
+FROM alpine:latest
+
+WORKDIR /root/
+
+# Copy the built binary from the builder stage
+COPY --from=builder /app/main .
+
+# Copy migrations
+COPY migrations ./migrations
+
+# Expose port 8080 to the outside world
+EXPOSE 8080
+
+# Command to run the executable
+CMD ["./main"]
