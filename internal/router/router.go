@@ -6,15 +6,18 @@ import (
 	serviceHandler "workshop-management/internal/handlers/http/service"
 	userHandler "workshop-management/internal/handlers/http/user"
 	vehicleHandler "workshop-management/internal/handlers/http/vehicle"
+	workorderHandler "workshop-management/internal/handlers/http/workorder"
 	authRepo "workshop-management/internal/repositories/auth"
 	bookingRepo "workshop-management/internal/repositories/booking"
 	serviceRepo "workshop-management/internal/repositories/service"
 	userRepo "workshop-management/internal/repositories/user"
 	vehicleRepo "workshop-management/internal/repositories/vehicle"
+	workorderRepo "workshop-management/internal/repositories/workorder"
 	bookingSvc "workshop-management/internal/services/booking"
 	serviceSvc "workshop-management/internal/services/service"
 	userSvc "workshop-management/internal/services/user"
 	vehicleSvc "workshop-management/internal/services/vehicle"
+	workorderSvc "workshop-management/internal/services/workorder"
 	"workshop-management/middlewares"
 	"workshop-management/pkg/logger"
 	"workshop-management/utils"
@@ -124,5 +127,20 @@ func (r *Routes) BookingRoutes() {
 		booking.POST("", h.Create)
 		booking.GET("/:id", h.GetBookingById)
 		booking.PUT("/:id/status", h.UpdateStatus)
+	}
+}
+
+func (r *Routes) WorkOrderRoutes() {
+	repo := workorderRepo.NewWorkOrderRepo(r.DB)
+	bookRepo := bookingRepo.NewBookingRepo(r.DB)
+	uc := workorderSvc.NewServiceWorkOrder(repo, bookRepo)
+	h := workorderHandler.NewWorkOrderHandler(uc)
+	mdw := middlewares.NewMiddleware(authRepo.NewBlacklistRepo(r.DB))
+
+	workorder := r.App.Group("/api/workorder").Use(mdw.AuthMiddleware())
+	{
+		workorder.POST("/from-booking/:id", h.CreateFromBooking)
+		//workorder.GET("/:id", h.GetById)
+		workorder.PUT("/:id/assign-mechanic", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.AssignMechanic)
 	}
 }

@@ -34,6 +34,13 @@ definitions:
     - model
     - year
     type: object
+  dto.AssignMechanic:
+    properties:
+      mechanic_id:
+        type: string
+    required:
+    - mechanic_id
+    type: object
   dto.CreateBooking:
     properties:
       booking_date:
@@ -421,8 +428,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Error'
-      security:
-      - ApiKeyAuth: []
       summary: Get a service by ID
       tags:
       - Services
@@ -507,8 +512,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Error'
-      security:
-      - ApiKeyAuth: []
       summary: Fetch services
       tags:
       - Services
@@ -940,6 +943,78 @@ paths:
       summary: Get a list of vehicles
       tags:
       - Vehicles
+  /workorders/{id}/assign-mechanic:
+    put:
+      consumes:
+      - application/json
+      description: Assign a mechanic to an existing work order
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Mechanic information
+        in: body
+        name: mechanic
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AssignMechanic'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - Bearer: []
+      summary: Assign a mechanic to a work order
+      tags:
+      - Work Orders
+  /workorders/from-booking/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Create a new work order from an existing booking ID
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - Bearer: []
+      summary: Create a work order from a booking
+      tags:
+      - Work Orders
 schemes:
 - http
 securityDefinitions:
