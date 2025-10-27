@@ -363,6 +363,13 @@ func (h *HandlerUser) ChangePassword(ctx *gin.Context) {
 			return
 		}
 
+		if err.Error() == messages.ErrHashPassword {
+			res := response.Response(http.StatusBadRequest, messages.MsgFail, logId, nil)
+			res.Error = response.Errors{Code: http.StatusBadRequest, Message: "current password is incorrect"}
+			ctx.JSON(http.StatusBadRequest, res)
+			return
+		}
+
 		res := response.Response(http.StatusBadRequest, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusBadRequest, res)

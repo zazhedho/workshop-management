@@ -103,16 +103,10 @@ func (s *ServiceUser) Update(id string, req dto.UserUpdate) (user.Users, error) 
 	}
 
 	if req.Phone != "" {
-		if req.Phone == data.Phone {
-			return user.Users{}, errors.New("phone is the same as before")
-		}
 		data.Phone = req.Phone
 	}
 
 	if req.Email != "" {
-		if req.Email == data.Email {
-			return user.Users{}, errors.New("email is the same as before")
-		}
 		data.Email = req.Email
 	}
 
@@ -124,13 +118,17 @@ func (s *ServiceUser) Update(id string, req dto.UserUpdate) (user.Users, error) 
 }
 
 func (s *ServiceUser) ChangePassword(id string, req dto.ChangePassword) (user.Users, error) {
+	if req.CurrentPassword == req.NewPassword {
+		return user.Users{}, errors.New("new password must be different from current password")
+	}
+
 	data, err := s.UserRepo.GetByID(id)
 	if err != nil {
 		return user.Users{}, err
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(req.CurrentPassword)); err == nil {
-		return user.Users{}, errors.New("password is the same as before")
+	if err = bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(req.CurrentPassword)); err != nil {
+		return user.Users{}, err
 	}
 
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)

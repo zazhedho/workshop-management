@@ -79,7 +79,7 @@ const Profile = () => {
     setPasswordLoading(true)
 
     try {
-      await api.put('/change/password', {
+      await api.put('/user/change/password', {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password
       })
@@ -90,8 +90,12 @@ const Profile = () => {
         confirm_password: ''
       })
     } catch (err) {
-      const errorPayload = err.response?.data || err
-      if (errorPayload && errorPayload.message) {
+      const errorPayload = err.response?.data
+      if (errorPayload && errorPayload.error && errorPayload.error.message) {
+        setPasswordError(errorPayload.error.message)
+      } else if (errorPayload && errorPayload.error) {
+          setPasswordError(String(errorPayload.error))
+      } else if (errorPayload && errorPayload.message) {
         setPasswordError(errorPayload.message)
       } else {
         setPasswordError('Failed to change password.')
