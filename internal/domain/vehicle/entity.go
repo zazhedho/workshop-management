@@ -2,6 +2,7 @@ package vehicle
 
 import (
 	"time"
+	"workshop-management/internal/domain/user"
 
 	"gorm.io/gorm"
 )
@@ -23,4 +24,6 @@ type Vehicle struct {
 	UpdatedBy    string         `json:"updated_by"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 	DeletedBy    string         `json:"-"`
+
+	User user.Users `gorm:"foreignKey:UserId"`
 }

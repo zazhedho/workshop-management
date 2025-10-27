@@ -72,6 +72,7 @@ func (r *Routes) UserRoutes() {
 			userPriv.GET("", h.GetUserByAuth)
 			userPriv.GET("/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.GetUserById)
 			userPriv.PUT("", h.Update)
+			userPriv.PUT("/change/password", h.ChangePassword)
 			userPriv.DELETE("", h.Delete)
 		}
 	}

@@ -1,70 +1,100 @@
 import React, { useState } from 'react'
 import { Card, Form, Button, Alert, Row, Col } from 'react-bootstrap'
 import { useAuth } from '../contexts/AuthContext'
+import api from '../services/api'
 
 const Profile = () => {
   const { user, updateProfile } = useAuth()
-  const [formData, setFormData] = useState({
+
+  // State for profile information
+  const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '',
-    password: '',
-    confirmPassword: ''
+    phone: user?.phone || ''
   })
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [profileError, setProfileError] = useState('')
+  const [profileSuccess, setProfileSuccess] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
+  // State for password change
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+  })
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+
+  const handleProfileChange = (e) => {
+    setProfileData({
+      ...profileData,
       [e.target.name]: e.target.value
     })
   }
 
-  const handleSubmit = async (e) => {
+  const handlePasswordChange = (e) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleProfileSubmit = async (e) => {
     e.preventDefault()
-    setError('')
-    setSuccess('')
+    setProfileError('')
+    setProfileSuccess('')
+    setProfileLoading(true)
 
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
+    const result = await updateProfile(profileData)
 
-    setLoading(true)
-
-    const updateData = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone
-    }
-
-    if (formData.password) {
-      updateData.password = formData.password
-    }
-
-    const result = await updateProfile(updateData)
-    
     if (result.success) {
-      setSuccess('Profile updated successfully')
-      setFormData(prev => ({
-        ...prev,
-        password: '',
-        confirmPassword: ''
-      }))
+      setProfileSuccess('Profile updated successfully')
     } else {
       const errorPayload = result.error
       if (errorPayload && errorPayload.message) {
-        setError(errorPayload.message)
+        setProfileError(errorPayload.message)
       } else if (errorPayload) {
-        setError(String(errorPayload))
+        setProfileError(String(errorPayload))
       } else {
-        setError('Profile update failed')
+        setProfileError('Profile update failed')
       }
     }
-    
-    setLoading(false)
+    setProfileLoading(false)
+  }
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    setPasswordLoading(true)
+
+    try {
+      await api.put('/change/password', {
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password
+      })
+      setPasswordSuccess('Password changed successfully')
+      setPasswordData({
+        current_password: '',
+        new_password: '',
+        confirm_password: ''
+      })
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setPasswordError(errorPayload.message)
+      } else {
+        setPasswordError('Failed to change password.')
+      }
+    }
+    setPasswordLoading(false)
   }
 
   return (
@@ -75,23 +105,23 @@ const Profile = () => {
 
       <Row>
         <Col md={8} lg={6}>
-          <Card>
+          {/* Update Profile Information Card */}
+          <Card className="mb-4">
             <Card.Header>
               <h5 className="mb-0">Update Profile Information</h5>
             </Card.Header>
             <Card.Body>
-              {error && <Alert variant="danger">{error}</Alert>}
-              {success && <Alert variant="success">{success}</Alert>}
+              {profileError && <Alert variant="danger">{profileError}</Alert>}
+              {profileSuccess && <Alert variant="success">{profileSuccess}</Alert>}
 
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleProfileSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>Full Name</Form.Label>
                   <Form.Control
                     type="text"
                     name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
+                    value={profileData.name}
+                    onChange={handleProfileChange}
                     placeholder="Enter your full name"
                   />
                 </Form.Group>
@@ -101,9 +131,8 @@ const Profile = () => {
                   <Form.Control
                     type="email"
                     name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
+                    value={profileData.email}
+                    onChange={handleProfileChange}
                     placeholder="Enter your email"
                   />
                 </Form.Group>
@@ -113,25 +142,62 @@ const Profile = () => {
                   <Form.Control
                     type="tel"
                     name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
+                    value={profileData.phone}
+                    onChange={handleProfileChange}
                     placeholder="Enter your phone number"
                   />
                 </Form.Group>
 
-                <hr />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={profileLoading}
+                  className="w-100"
+                >
+                  {profileLoading ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin me-2"></i>
+                      Updating Profile...
+                    </>
+                  ) : (
+                    'Update Profile'
+                  )}
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
 
-                <h6 className="mb-3">Change Password (Optional)</h6>
+          {/* Change Password Card */}
+          <Card>
+            <Card.Header>
+              <h5 className="mb-0">Change Password</h5>
+            </Card.Header>
+            <Card.Body>
+              {passwordError && <Alert variant="danger">{passwordError}</Alert>}
+              {passwordSuccess && <Alert variant="success">{passwordSuccess}</Alert>}
+
+              <Form onSubmit={handlePasswordSubmit}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Current Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="current_password"
+                    value={passwordData.current_password}
+                    onChange={handlePasswordChange}
+                    required
+                    placeholder="Enter your current password"
+                  />
+                </Form.Group>
 
                 <Form.Group className="mb-3">
                   <Form.Label>New Password</Form.Label>
                   <Form.Control
                     type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Enter new password (leave blank to keep current)"
+                    name="new_password"
+                    value={passwordData.new_password}
+                    onChange={handlePasswordChange}
+                    required
+                    placeholder="Enter new password"
                   />
                 </Form.Group>
 
@@ -139,9 +205,10 @@ const Profile = () => {
                   <Form.Label>Confirm New Password</Form.Label>
                   <Form.Control
                     type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
+                    name="confirm_password"
+                    value={passwordData.confirm_password}
+                    onChange={handlePasswordChange}
+                    required
                     placeholder="Confirm new password"
                   />
                 </Form.Group>
@@ -149,16 +216,16 @@ const Profile = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  disabled={loading}
+                  disabled={passwordLoading}
                   className="w-100"
                 >
-                  {loading ? (
+                  {passwordLoading ? (
                     <>
                       <i className="fas fa-spinner fa-spin me-2"></i>
-                      Updating...
+                      Changing Password...
                     </>
                   ) : (
-                    'Update Profile'
+                    'Change Password'
                   )}
                 </Button>
               </Form>

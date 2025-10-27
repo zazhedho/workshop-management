@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Row, Col, Card, Table, Badge } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom' // Import useNavigate
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate() // Get the navigate function
   const [stats, setStats] = useState({
     totalBookings: 0,
     pendingBookings: 0,
@@ -83,7 +85,7 @@ const Dashboard = () => {
       {/* Stats Cards */}
       <Row className="mb-4">
         <Col md={3} sm={6} className="mb-3">
-          <Card className="stats-card">
+          <Card className="stats-card" onClick={() => navigate('/bookings')} style={{ cursor: 'pointer' }}>
             <Card.Body className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <h3 className="mb-0">{stats.totalBookings}</h3>
@@ -94,7 +96,7 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col md={3} sm={6} className="mb-3">
-          <Card className="stats-card">
+          <Card className="stats-card" onClick={() => navigate('/bookings?status=pending')} style={{ cursor: 'pointer' }}>
             <Card.Body className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <h3 className="mb-0">{stats.pendingBookings}</h3>
@@ -105,7 +107,7 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col md={3} sm={6} className="mb-3">
-          <Card className="stats-card">
+          <Card className="stats-card" onClick={() => navigate('/vehicles')} style={{ cursor: 'pointer' }}>
             <Card.Body className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <h3 className="mb-0">{stats.totalVehicles}</h3>
@@ -116,7 +118,7 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col md={3} sm={6} className="mb-3">
-          <Card className="stats-card">
+          <Card className="stats-card" onClick={() => navigate('/services')} style={{ cursor: 'pointer' }}>
             <Card.Body className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <h3 className="mb-0">{stats.totalServices}</h3>

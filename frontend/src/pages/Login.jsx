@@ -12,6 +12,7 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -38,6 +39,7 @@ const Login = () => {
     }
 
     if (error) setError('')
+    if (showChangePassword) setShowChangePassword(false)
   }
 
   const validateForm = () => {
@@ -62,6 +64,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setShowChangePassword(false)
 
     if (!validateForm()) {
       return
@@ -75,12 +78,18 @@ const Login = () => {
       navigate('/dashboard')
     } else {
       const errorPayload = result.error
+      let errorMessage = 'Login failed'
+
       if (errorPayload && errorPayload.message) {
-        setError(errorPayload.message)
+        errorMessage = errorPayload.message
       } else if (errorPayload) {
-        setError(String(errorPayload))
-      } else {
-        setError('Login failed')
+        errorMessage = String(errorPayload)
+      }
+      
+      setError(errorMessage)
+
+      if (errorMessage.includes('Invalid Credentials')) {
+        setShowChangePassword(true)
       }
     }
 
@@ -108,6 +117,14 @@ const Login = () => {
                   </Alert>
                 )}
                 {error && <Alert variant="danger">{error}</Alert>}
+
+                {showChangePassword && (
+                  <div className="d-grid gap-2 mb-3">
+                    <Button variant="warning" onClick={() => navigate('/forgot-password')}>
+                      Forgot Password?
+                    </Button>
+                  </div>
+                )}
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3">

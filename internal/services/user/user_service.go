@@ -116,13 +116,29 @@ func (s *ServiceUser) Update(id string, req dto.UserUpdate) (user.Users, error) 
 		data.Email = req.Email
 	}
 
-	if req.Password != "" {
-		if err = bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(req.Password)); err == nil {
-			return user.Users{}, errors.New("password is the same as before")
-		}
-		hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		data.Password = string(hashedPwd)
+	if err = s.UserRepo.Update(data); err != nil {
+		return user.Users{}, err
 	}
+
+	return data, nil
+}
+
+func (s *ServiceUser) ChangePassword(id string, req dto.ChangePassword) (user.Users, error) {
+	data, err := s.UserRepo.GetByID(id)
+	if err != nil {
+		return user.Users{}, err
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(req.CurrentPassword)); err == nil {
+		return user.Users{}, errors.New("password is the same as before")
+	}
+
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return user.Users{}, err
+	}
+
+	data.Password = string(hashedPwd)
 
 	if err = s.UserRepo.Update(data); err != nil {
 		return user.Users{}, err

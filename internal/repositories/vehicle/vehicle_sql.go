@@ -21,7 +21,10 @@ func (r *repo) Store(m vehicle.Vehicle) error {
 }
 
 func (r *repo) Fetch(params filter.BaseParams) (ret []vehicle.Vehicle, totalData int64, err error) {
-	query := r.DB.Model(&vehicle.Vehicle{}).Debug()
+	query := r.DB.Model(&vehicle.Vehicle{}).
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "name")
+		}).Debug()
 
 	if params.Search != "" {
 		searchPattern := "%" + params.Search + "%"

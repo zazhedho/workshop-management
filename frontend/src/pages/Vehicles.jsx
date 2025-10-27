@@ -154,6 +154,7 @@ const Vehicles = () => {
   }
 
   const canModify = user?.role === 'admin' || user?.role === 'customer'
+  const showOwner = user?.role === 'admin' || user?.role === 'cashier'
 
   return (
     <div>
@@ -207,6 +208,7 @@ const Vehicles = () => {
                 <thead>
                   <tr>
                     <th>License Plate</th>
+                    {showOwner && <th>Owner</th>}
                     <th>Brand</th>
                     <th>Model</th>
                     <th>Year</th>
@@ -226,6 +228,7 @@ const Vehicles = () => {
                           </div>
                         </div>
                       </td>
+                      {showOwner && <td>{vehicle.User?.name || 'N/A'}</td>}
                       <td>{vehicle.brand}</td>
                       <td>{vehicle.model}</td>
                       <td>{vehicle.year}</td>

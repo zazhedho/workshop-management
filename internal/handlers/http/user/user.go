@@ -323,6 +323,57 @@ func (h *HandlerUser) Update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// ChangePassword godoc
+// @Summary Change a user's password
+// @Description Change a user's password
+// @Tags Users
+// @Accept  json
+// @Produce  json
+// @Param id path string true "User ID"
+// @Param user body dto.ChangePassword true "User change password details"
+// @Success 200 {object} response.Success
+// @Failure 400 {object} response.Error
+// @Failure 404 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Security ApiKeyAuth
+// @Router /user/change/password [put]
+func (h *HandlerUser) ChangePassword(ctx *gin.Context) {
+	var req dto.ChangePassword
+	authData := utils.GetAuthData(ctx)
+	userId := utils.InterfaceString(authData["user_id"])
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][UserHandler][ChangePassword]", logId)
+
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
+
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
+		res.Error = utils.ValidateError(err, reflect.TypeOf(req), "json")
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	data, err := h.Service.ChangePassword(userId, req)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.ChangePassword; ERROR: %s;", logPrefix, err))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
+			res.Error = response.Errors{Code: http.StatusNotFound, Message: "user not found"}
+			ctx.JSON(http.StatusNotFound, res)
+			return
+		}
+
+		res := response.Response(http.StatusBadRequest, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := response.Response(http.StatusOK, "User password changed successfully", logId, data)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(data)))
+	ctx.JSON(http.StatusOK, res)
+}
+
 // Delete godoc
 // @Summary Delete a user
 // @Description Delete a user
