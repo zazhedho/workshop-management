@@ -139,8 +139,9 @@ func (r *Routes) WorkOrderRoutes() {
 
 	workorder := r.App.Group("/api/workorder").Use(mdw.AuthMiddleware())
 	{
-		workorder.POST("/from-booking/:id", h.CreateFromBooking)
-		//workorder.GET("/:id", h.GetById)
+		workorder.POST("/from-booking/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.CreateFromBooking)
+		workorder.GET("/:id", h.GetById)
 		workorder.PUT("/:id/assign-mechanic", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.AssignMechanic)
+		workorder.PUT("/:id/status", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.UpdateStatus)
 	}
 }

@@ -943,7 +943,42 @@ paths:
       summary: Get a list of vehicles
       tags:
       - Vehicles
-  /workorders/{id}/assign-mechanic:
+  /workorder/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a work order by ID
+      parameters:
+      - description: Work Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - Bearer: []
+      summary: Get a work order by ID
+      tags:
+      - Work Orders
+  /workorder/{id}/assign-mechanic:
     put:
       consumes:
       - application/json
@@ -984,7 +1019,7 @@ paths:
       summary: Assign a mechanic to a work order
       tags:
       - Work Orders
-  /workorders/from-booking/{id}:
+  /workorder/from-booking/{id}:
     post:
       consumes:
       - application/json

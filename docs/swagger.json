@@ -1211,7 +1211,7 @@
                 }
             }
         },
-        "/workorders/from-booking/{id}": {
+        "/workorder/from-booking/{id}": {
             "post": {
                 "security": [
                     {
@@ -1260,7 +1260,62 @@
                 }
             }
         },
-        "/workorders/{id}/assign-mechanic": {
+        "/workorder/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get a work order by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Work Orders"
+                ],
+                "summary": "Get a work order by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Work Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Success"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/workorder/{id}/assign-mechanic": {
             "put": {
                 "security": [
                     {

@@ -85,3 +85,17 @@ func (s *ServiceWorkOrder) AssignMechanic(req dto.AssignMechanic, workOrderId, u
 
 	return s.WorkOrderRepo.Update(workorder.WorkOrder{Id: workOrderId}, data)
 }
+
+func (s *ServiceWorkOrder) GetById(id string) (workorder.WorkOrder, error) {
+	return s.WorkOrderRepo.GetById(id)
+}
+
+func (s *ServiceWorkOrder) UpdateStatus(workOrderId, status, userId string) (int64, error) {
+	data := map[string]interface{}{
+		"status":     status,
+		"updated_at": time.Now(),
+		"updated_by": userId,
+	}
+
+	return s.WorkOrderRepo.Update(workorder.WorkOrder{Id: workOrderId}, data)
+}

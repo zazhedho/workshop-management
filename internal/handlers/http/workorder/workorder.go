@@ -1,6 +1,7 @@
 package workorder
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 	"workshop-management/utils"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type HandlerWorkOrder struct {
@@ -98,6 +100,104 @@ func (h *HandlerWorkOrder) AssignMechanic(ctx *gin.Context) {
 	rows, err := h.Service.AssignMechanic(req, workOrderId, userId)
 	if err != nil {
 		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.AssignMechanic; Error: %+v", logPrefix, err))
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, res)
+		return
+	}
+	if rows == 0 {
+		res := response.Response(http.StatusNotFound, messages.MsgNotFound, logId, nil)
+		res.Error = response.Errors{Code: http.StatusNotFound, Message: messages.NotFound}
+		ctx.JSON(http.StatusNotFound, res)
+		return
+	}
+
+	res := response.Response(http.StatusOK, "success", logId, nil)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(res)))
+	ctx.JSON(http.StatusOK, res)
+}
+
+// GetById godoc
+// @Summary Get a work order by ID
+// @Description Get a work order by ID
+// @Tags Work Orders
+// @Accept json
+// @Produce json
+// @Param id path string true "Work Order ID"
+// @Success 200 {object} response.Success
+// @Failure 400 {object} response.Error
+// @Failure 404 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Router /workorder/{id} [get]
+// @Security Bearer
+func (h *HandlerWorkOrder) GetById(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][WorkOrderHandler][GetById]", logId)
+
+	workOrderId, err := utils.ValidateUUID(ctx, logId)
+	if err != nil {
+		return
+	}
+
+	data, err := h.Service.GetById(workOrderId)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; GetById; Error: %+v", logPrefix, err))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			res := response.Response(http.StatusNotFound, messages.NotFound, logId, nil)
+			res.Error = "work order not found"
+			ctx.JSON(http.StatusNotFound, res)
+			return
+		}
+
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := response.Response(http.StatusOK, "success", logId, data)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(data)))
+	ctx.JSON(http.StatusOK, res)
+}
+
+// UpdateStatus godoc
+// @Summary Update a work order status
+// @Description Update the status of an existing work order
+// @Tags Work Orders
+// @Accept json
+// @Produce json
+// @Param id path string true "Work Order ID"
+// @Param status body dto.UpdateStatus true "New status"
+// @Success 200 {object} response.Success
+// @Failure 400 {object} response.Error
+// @Failure 404 {object} response.Error
+// @Failure 500 {object} response.Error
+// @Router /workorders/{id}/status [put]
+// @Security Bearer
+func (h *HandlerWorkOrder) UpdateStatus(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][WorkOrderHandler][UpdateStatus]", logId)
+	authData := utils.GetAuthData(ctx)
+	userId := utils.InterfaceString(authData["user_id"])
+
+	workOrderId, err := utils.ValidateUUID(ctx, logId)
+	if err != nil {
+		return
+	}
+
+	var req dto.UpdateStatus
+	if err := ctx.BindJSON(&req); err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; BindJSON ERROR: %s;", logPrefix, err.Error()))
+		res := response.Response(http.StatusBadRequest, messages.InvalidRequest, logId, nil)
+		res.Error = utils.ValidateError(err, reflect.TypeOf(req), "json")
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Request: %+v;", logPrefix, utils.JsonEncode(req)))
+
+	rows, err := h.Service.UpdateStatus(workOrderId, req.Status, userId)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Service.UpdateStatus; Error: %+v", logPrefix, err))
 		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
 		res.Error = err.Error()
 		ctx.JSON(http.StatusInternalServerError, res)
