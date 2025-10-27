@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Form, Button, Alert, Container } from 'react-bootstrap'
+import { Card, Form, Button, Alert, Container, InputGroup } from 'react-bootstrap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -12,6 +12,7 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -144,17 +145,22 @@ const Login = () => {
 
                   <Form.Group className="mb-4">
                     <Form.Label>Password</Form.Label>
-                    <Form.Control
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Enter your password"
-                      isInvalid={!!validationErrors.password}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {validationErrors.password}
-                    </Form.Control.Feedback>
+                    <InputGroup hasValidation>
+                      <Form.Control
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Enter your password"
+                        isInvalid={!!validationErrors.password}
+                      />
+                      <InputGroup.Text onClick={() => setShowPassword(!showPassword)} style={{ cursor: 'pointer' }}>
+                        <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                      </InputGroup.Text>
+                      <Form.Control.Feedback type="invalid">
+                        {validationErrors.password}
+                      </Form.Control.Feedback>
+                    </InputGroup>
                     <Form.Text className="text-muted">
                       Password must be at least 8 characters
                     </Form.Text>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Card, Form, Button, Alert, Container } from 'react-bootstrap'
+import { Card, Form, Button, Alert, Container, InputGroup } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -14,6 +14,8 @@ const Register = () => {
   const [error, setError] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
 
@@ -169,17 +171,22 @@ const Register = () => {
 
                   <Form.Group className="mb-3">
                     <Form.Label>Password</Form.Label>
-                    <Form.Control
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Enter your password"
-                      isInvalid={!!validationErrors.password}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {validationErrors.password}
-                    </Form.Control.Feedback>
+                    <InputGroup hasValidation>
+                      <Form.Control
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Enter your password"
+                        isInvalid={!!validationErrors.password}
+                      />
+                      <InputGroup.Text onClick={() => setShowPassword(!showPassword)} style={{ cursor: 'pointer' }}>
+                        <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                      </InputGroup.Text>
+                      <Form.Control.Feedback type="invalid">
+                        {validationErrors.password}
+                      </Form.Control.Feedback>
+                    </InputGroup>
                     <Form.Text className="text-muted">
                       At least 8 characters with uppercase and lowercase letters
                     </Form.Text>
@@ -187,17 +194,22 @@ const Register = () => {
 
                   <Form.Group className="mb-4">
                     <Form.Label>Confirm Password</Form.Label>
-                    <Form.Control
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Confirm your password"
-                      isInvalid={!!validationErrors.confirmPassword}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {validationErrors.confirmPassword}
-                    </Form.Control.Feedback>
+                    <InputGroup hasValidation>
+                      <Form.Control
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirm your password"
+                        isInvalid={!!validationErrors.confirmPassword}
+                      />
+                      <InputGroup.Text onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ cursor: 'pointer' }}>
+                        <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                      </InputGroup.Text>
+                      <Form.Control.Feedback type="invalid">
+                        {validationErrors.confirmPassword}
+                      </Form.Control.Feedback>
+                    </InputGroup>
                   </Form.Group>
 
                   <Button

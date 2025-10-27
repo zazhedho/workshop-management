@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Card, Form, Button, Alert, Row, Col } from 'react-bootstrap'
+import { Card, Form, Button, Alert, Row, Col, InputGroup } from 'react-bootstrap'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
@@ -25,6 +25,9 @@ const Profile = () => {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleProfileChange = (e) => {
     setProfileData({
@@ -179,38 +182,53 @@ const Profile = () => {
               <Form onSubmit={handlePasswordSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>Current Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="current_password"
-                    value={passwordData.current_password}
-                    onChange={handlePasswordChange}
-                    required
-                    placeholder="Enter your current password"
-                  />
+                  <InputGroup>
+                    <Form.Control
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      name="current_password"
+                      value={passwordData.current_password}
+                      onChange={handlePasswordChange}
+                      required
+                      placeholder="Enter your current password"
+                    />
+                    <InputGroup.Text onClick={() => setShowCurrentPassword(!showCurrentPassword)} style={{ cursor: 'pointer' }}>
+                      <i className={showCurrentPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                    </InputGroup.Text>
+                  </InputGroup>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
                   <Form.Label>New Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="new_password"
-                    value={passwordData.new_password}
-                    onChange={handlePasswordChange}
-                    required
-                    placeholder="Enter new password"
-                  />
+                  <InputGroup>
+                    <Form.Control
+                      type={showNewPassword ? 'text' : 'password'}
+                      name="new_password"
+                      value={passwordData.new_password}
+                      onChange={handlePasswordChange}
+                      required
+                      placeholder="Enter new password"
+                    />
+                    <InputGroup.Text onClick={() => setShowNewPassword(!showNewPassword)} style={{ cursor: 'pointer' }}>
+                      <i className={showNewPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                    </InputGroup.Text>
+                  </InputGroup>
                 </Form.Group>
 
                 <Form.Group className="mb-4">
                   <Form.Label>Confirm New Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="confirm_password"
-                    value={passwordData.confirm_password}
-                    onChange={handlePasswordChange}
-                    required
-                    placeholder="Confirm new password"
-                  />
+                  <InputGroup>
+                    <Form.Control
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirm_password"
+                      value={passwordData.confirm_password}
+                      onChange={handlePasswordChange}
+                      required
+                      placeholder="Confirm new password"
+                    />
+                    <InputGroup.Text onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ cursor: 'pointer' }}>
+                      <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+                    </InputGroup.Text>
+                  </InputGroup>
                 </Form.Group>
 
                 <Button
