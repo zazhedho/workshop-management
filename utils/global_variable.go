@@ -27,5 +27,4 @@ const (
 	StsOnProgress = "on progress"
 	StsApproved   = "approved"
 	StsRejected   = "rejected"
-	StsOpen       = "open"
 )
