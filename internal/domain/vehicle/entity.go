@@ -13,15 +13,15 @@ func (Vehicle) TableName() string {
 
 type Vehicle struct {
 	Id           string         `json:"id" gorm:"column:id;primaryKey"`
-	UserId       string         `json:"user_id"`
-	LicensePlate string         `json:"license_plate"`
-	Brand        string         `json:"brand"`
-	Model        string         `json:"model"`
-	Year         string         `json:"year"`
-	Color        string         `json:"color"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	UpdatedBy    string         `json:"updated_by"`
+	UserId       string         `json:"user_id,omitempty"`
+	LicensePlate string         `json:"license_plate,omitempty"`
+	Brand        string         `json:"brand,omitempty"`
+	Model        string         `json:"model,omitempty"`
+	Year         string         `json:"year,omitempty"`
+	Color        string         `json:"color,omitempty"`
+	CreatedAt    time.Time      `json:"created_at,omitempty"`
+	UpdatedAt    time.Time      `json:"updated_at,omitempty"`
+	UpdatedBy    string         `json:"updated_by,omitempty"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 	DeletedBy    string         `json:"-"`
 

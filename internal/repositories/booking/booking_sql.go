@@ -81,7 +81,7 @@ func (r *repo) GetBookingServicesByBookingId(bookingId string) ([]booking.BookSe
 func (r *repo) Fetch(params filter.BaseParams) (bookings []booking.Booking, totalData int64, err error) {
 	query := r.DB.Model(&booking.Booking{}).
 		Preload("Vehicle", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "model")
+			return db.Select("id", "model", "license_plate")
 		}).Debug()
 
 	if len(params.Columns) > 0 {

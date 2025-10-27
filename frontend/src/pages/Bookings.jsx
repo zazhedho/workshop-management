@@ -426,9 +426,8 @@ const Bookings = () => {
                       <td>{formatDate(booking.booking_date)}</td>
                       <td>
                         <div className="d-flex align-items-center">
-                          <i className="fas fa-calendar-check fa-2x text-primary me-3"></i>
                           <div>
-                            <div className="fw-bold">{booking.Vehicle.model}</div>
+                            <div className="fw-bold">{booking.Vehicle.model + ' - ' + booking.Vehicle.license_plate.replace(/\s+/g, '')}</div>
                           </div>
                         </div>
                       </td>
