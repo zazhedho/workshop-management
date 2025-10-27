@@ -57,8 +57,8 @@ const Register = () => {
 
     if (!formData.password) {
       errors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters long'
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long'
     } else if (!/(?=.*[a-z])(?=.*[A-Z])/.test(formData.password)) {
       errors.password = 'Password must contain both uppercase and lowercase letters'
     }
@@ -183,7 +183,7 @@ const Register = () => {
                       {validationErrors.password}
                     </Form.Control.Feedback>
                     <Form.Text className="text-muted">
-                      At least 6 characters with uppercase and lowercase letters
+                      At least 8 characters with uppercase and lowercase letters
                     </Form.Text>
                   </Form.Group>
 

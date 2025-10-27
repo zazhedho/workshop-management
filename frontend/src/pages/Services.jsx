@@ -130,7 +130,7 @@ const Services = () => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'IDR'
     }).format(price)
   }
 
