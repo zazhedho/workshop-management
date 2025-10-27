@@ -48,7 +48,7 @@ func (s *ServiceVehicle) Fetch(params filter.BaseParams) ([]vehicle.Vehicle, int
 
 func (s *ServiceVehicle) Update(id, userId string, req dto.UpdateVehicle) (int64, error) {
 	data := vehicle.Vehicle{
-		Brand:        utils.TitleCase(req.Brand),
+		Brand:        strings.ToUpper(req.Brand),
 		Model:        utils.TitleCase(req.Model),
 		Year:         req.Year,
 		Color:        utils.TitleCase(req.Color),

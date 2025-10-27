@@ -368,7 +368,7 @@ const Vehicles = () => {
                 value={formData.license_plate}
                 onChange={handleChange}
                 required
-                placeholder="e.g., ABC-1234"
+                placeholder="e.g., B 1234 CD"
               />
             </Form.Group>
           </Modal.Body>
