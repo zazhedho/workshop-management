@@ -12,23 +12,72 @@ const Register = () => {
     confirmPassword: ''
   })
   const [error, setError] = useState('')
+  const [validationErrors, setValidationErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     })
+
+    if (validationErrors[name]) {
+      setValidationErrors({
+        ...validationErrors,
+        [name]: ''
+      })
+    }
+
+    if (error) setError('')
+  }
+
+  const validateForm = () => {
+    const errors = {}
+
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required'
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters long'
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address'
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required'
+    } else if (!/^[\d\s\-+()]+$/.test(formData.phone)) {
+      errors.phone = 'Please enter a valid phone number'
+    }
+
+    if (!formData.password) {
+      errors.password = 'Password is required'
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters long'
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])/.test(formData.password)) {
+      errors.password = 'Password must contain both uppercase and lowercase letters'
+    }
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password'
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match'
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+    if (!validateForm()) {
       return
     }
 
@@ -36,15 +85,24 @@ const Register = () => {
 
     const { confirmPassword, ...registerData } = formData
     const result = await register(registerData)
-    
+
     if (result.success) {
-      navigate('/login', { 
+      navigate('/login', {
         state: { message: 'Registration successful! Please login.' }
       })
     } else {
-      setError(result.error)
+      let errorMessage = result.error || 'Registration failed'
+
+      if (errorMessage.toLowerCase().includes('email already exists') ||
+          errorMessage.toLowerCase().includes('duplicate')) {
+        errorMessage = 'An account with this email already exists. Please use a different email or try logging in.'
+      } else if (errorMessage.toLowerCase().includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.'
+      }
+
+      setError(errorMessage)
     }
-    
+
     setLoading(false)
   }
 
@@ -73,9 +131,12 @@ const Register = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      required
                       placeholder="Enter your full name"
+                      isInvalid={!!validationErrors.name}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.name}
+                    </Form.Control.Feedback>
                   </Form.Group>
 
                   <Form.Group className="mb-3">
@@ -85,9 +146,12 @@ const Register = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      required
                       placeholder="Enter your email"
+                      isInvalid={!!validationErrors.email}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.email}
+                    </Form.Control.Feedback>
                   </Form.Group>
 
                   <Form.Group className="mb-3">
@@ -97,9 +161,12 @@ const Register = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      required
                       placeholder="Enter your phone number"
+                      isInvalid={!!validationErrors.phone}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.phone}
+                    </Form.Control.Feedback>
                   </Form.Group>
 
                   <Form.Group className="mb-3">
@@ -109,9 +176,15 @@ const Register = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      required
                       placeholder="Enter your password"
+                      isInvalid={!!validationErrors.password}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.password}
+                    </Form.Control.Feedback>
+                    <Form.Text className="text-muted">
+                      At least 6 characters with uppercase and lowercase letters
+                    </Form.Text>
                   </Form.Group>
 
                   <Form.Group className="mb-4">
@@ -121,9 +194,12 @@ const Register = () => {
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      required
                       placeholder="Confirm your password"
+                      isInvalid={!!validationErrors.confirmPassword}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.confirmPassword}
+                    </Form.Control.Feedback>
                   </Form.Group>
 
                   <Button

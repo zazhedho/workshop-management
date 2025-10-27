@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, Form, Button, Alert, Container } from 'react-bootstrap'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 const Login = () => {
@@ -9,30 +9,86 @@ const Login = () => {
     password: ''
   })
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [validationErrors, setValidationErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message)
+      window.history.replaceState({}, document.title)
+    }
+  }, [location])
 
   const handleChange = (e) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     })
+
+    if (validationErrors[name]) {
+      setValidationErrors({
+        ...validationErrors,
+        [name]: ''
+      })
+    }
+
+    if (error) setError('')
+  }
+
+  const validateForm = () => {
+    const errors = {}
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address'
+    }
+
+    if (!formData.password) {
+      errors.password = 'Password is required'
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters long'
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    if (!validateForm()) {
+      return
+    }
+
     setLoading(true)
 
     const result = await login(formData.email, formData.password)
-    
+
     if (result.success) {
       navigate('/dashboard')
     } else {
-      setError(result.error)
+      let errorMessage = result.error || 'Login failed'
+
+      if (errorMessage.toLowerCase().includes('unauthorized') ||
+          errorMessage.toLowerCase().includes('invalid credentials') ||
+          errorMessage.toLowerCase().includes('wrong password')) {
+        errorMessage = 'Invalid email or password. Please try again.'
+      } else if (errorMessage.toLowerCase().includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.'
+      } else if (errorMessage.toLowerCase().includes('user not found')) {
+        errorMessage = 'No account found with this email address.'
+      }
+
+      setError(errorMessage)
     }
-    
+
     setLoading(false)
   }
 
@@ -51,6 +107,11 @@ const Login = () => {
                   <p className="text-muted">Sign in to your account</p>
                 </div>
 
+                {successMessage && (
+                  <Alert variant="success" dismissible onClose={() => setSuccessMessage('')}>
+                    {successMessage}
+                  </Alert>
+                )}
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 <Form onSubmit={handleSubmit}>
@@ -61,9 +122,12 @@ const Login = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      required
                       placeholder="Enter your email"
+                      isInvalid={!!validationErrors.email}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.email}
+                    </Form.Control.Feedback>
                   </Form.Group>
 
                   <Form.Group className="mb-4">
@@ -73,9 +137,15 @@ const Login = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      required
                       placeholder="Enter your password"
+                      isInvalid={!!validationErrors.password}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.password}
+                    </Form.Control.Feedback>
+                    <Form.Text className="text-muted">
+                      Password must be at least 6 characters
+                    </Form.Text>
                   </Form.Group>
 
                   <Button
