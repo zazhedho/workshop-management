@@ -198,9 +198,27 @@ const Bookings = () => {
     }
 
     try {
+      // Get the local timezone offset in minutes
+      const offsetMinutes = bookingDate.getTimezoneOffset();
+      // Convert to hours and format as +/-HH:MM
+      const offsetSign = offsetMinutes > 0 ? '-' : '+'; // Invert sign for ISO 8601
+      const absOffsetMinutes = Math.abs(offsetMinutes);
+      const offsetHours = String(Math.floor(absOffsetMinutes / 60)).padStart(2, '0');
+      const offsetRemainderMinutes = String(absOffsetMinutes % 60).padStart(2, '0');
+      const timezoneOffset = `${offsetSign}${offsetHours}:${offsetRemainderMinutes}`;
+
+      // Manually construct ISO string with local timezone offset
+      const year = bookingDate.getFullYear();
+      const month = String(bookingDate.getMonth() + 1).padStart(2, '0');
+      const day = String(bookingDate.getDate()).padStart(2, '0');
+      const hours = String(bookingDate.getHours()).padStart(2, '0');
+      const minutes = String(bookingDate.getMinutes()).padStart(2, '0');
+      const seconds = String(bookingDate.getSeconds()).padStart(2, '0');
+      const localDateTimeWithOffset = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezoneOffset}`;
+
       const submitData = {
         ...formData,
-        // booking_date: bookingDate.toISOString()
+        booking_date: localDateTimeWithOffset
       }
 
       await api.post('/booking', submitData)
@@ -271,7 +289,7 @@ const Bookings = () => {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    })
+    }) + ' WIB'
   }
 
   const filterTime = (time) => {
