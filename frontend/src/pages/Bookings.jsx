@@ -13,6 +13,8 @@ const Bookings = () => {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [bookingToCancel, setBookingToCancel] = useState(null)
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -131,6 +133,20 @@ const Bookings = () => {
   const handleCloseStatusModal = () => {
     setShowStatusModal(false)
     setSelectedBooking(null)
+    setError('')
+    setSuccess('')
+  }
+
+  const handleShowCancelModal = (bookingId) => {
+    setBookingToCancel(bookingId)
+    setShowCancelModal(true)
+    setError('')
+    setSuccess('')
+  }
+
+  const handleCloseCancelModal = () => {
+    setBookingToCancel(null)
+    setShowCancelModal(false)
     setError('')
     setSuccess('')
   }
@@ -261,6 +277,26 @@ const Bookings = () => {
     }
   }
 
+  const handleConfirmCancelBooking = async () => {
+    if (!bookingToCancel) return
+
+    setError('')
+    setSuccess('')
+    try {
+      await api.put(`/booking/${bookingToCancel}/status`, { status: 'cancelled' })
+      setSuccess('Booking cancelled successfully')
+      fetchBookings()
+      handleCloseCancelModal()
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to cancel booking.')
+      }
+    }
+  }
+
   const handleSearch = (e) => {
     setSearch(e.target.value)
     setCurrentPage(1)
@@ -307,6 +343,7 @@ const Bookings = () => {
 
   const canCreate = user?.role === 'customer' || user?.role === 'admin'
   const canUpdateStatus = user?.role === 'admin' || user?.role === 'cashier'
+  const canCancel = user?.role === 'customer'
 
   return (
     <div>
@@ -380,7 +417,7 @@ const Bookings = () => {
                     <th>Status</th>
                     <th>Notes</th>
                     <th>Created At</th>
-                    {canUpdateStatus && <th>Actions</th>}
+                    {(canUpdateStatus || canCancel) && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -398,16 +435,29 @@ const Bookings = () => {
                       <td>{getStatusBadge(booking.status)}</td>
                       <td>{booking.notes || '-'}</td>
                       <td>{formatDate(booking.created_at)}</td>
-                      {canUpdateStatus && (
+                      {(canUpdateStatus || canCancel) && (
                         <td>
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() => handleShowStatusModal(booking)}
-                          >
-                            <i className="fas fa-edit me-1"></i>
-                            Update Status
-                          </Button>
+                          {canUpdateStatus && !['cancelled'].includes(booking.status) && (
+                            <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => handleShowStatusModal(booking)}
+                            >
+                                <i className="fas fa-edit me-1"></i>
+                                Update Status
+                            </Button>
+                          )}
+                          {canCancel && ['pending', 'confirmed'].includes(booking.status) && (
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleShowCancelModal(booking.id)}
+                              className="ms-2"
+                            >
+                              <i className="fas fa-times me-1"></i>
+                              Cancel
+                            </Button>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -573,6 +623,25 @@ const Bookings = () => {
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      {/* Cancel Booking Confirmation Modal */}
+      <Modal show={showCancelModal} onHide={handleCloseCancelModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Cancellation</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to cancel this booking?
+          {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseCancelModal}>
+            Close
+          </Button>
+          <Button variant="danger" onClick={handleConfirmCancelBooking}>
+            Confirm
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   )
