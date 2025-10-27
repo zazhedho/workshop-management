@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Table, Button, Modal, Form, Row, Col, Pagination, Alert, Badge } from 'react-bootstrap'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -23,7 +25,7 @@ const Bookings = () => {
 
   const [formData, setFormData] = useState({
     vehicle_id: '',
-    booking_date: '',
+    booking_date: null,
     notes: '',
     service_ids: []
   })
@@ -94,10 +96,16 @@ const Bookings = () => {
     }
   }
 
+  const getInitialBookingDate = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    return now;
+  };
+
   const handleShowModal = () => {
     setFormData({
       vehicle_id: '',
-      booking_date: '',
+      booking_date: getInitialBookingDate(),
       notes: '',
       service_ids: []
     })
@@ -126,6 +134,10 @@ const Bookings = () => {
     setError('')
     setSuccess('')
   }
+
+  const handleDateChange = (date) => {
+    setFormData(prev => ({ ...prev, booking_date: date }));
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -161,10 +173,34 @@ const Bookings = () => {
     setError('')
     setSuccess('')
 
+    if (formData.service_ids.length === 0) {
+      setError('Please select at least one service.');
+      return;
+    }
+
+    if (!formData.booking_date) {
+      setError('Booking date is required.');
+      return;
+    }
+
+    const now = new Date()
+    const bookingDate = new Date(formData.booking_date)
+    const bookingHour = bookingDate.getHours()
+
+    if (bookingDate.getTime() - now.getTime() < 60 * 60 * 1000) {
+        setError('Booking must be at least 1 hour from now.');
+        return;
+    }
+
+    if (bookingHour < 8 || bookingHour >= 20) {
+      setError('Booking time must be between 8:00 AM and 8:00 PM.')
+      return
+    }
+
     try {
       const submitData = {
         ...formData,
-        booking_date: new Date(formData.booking_date).toISOString()
+        // booking_date: bookingDate.toISOString()
       }
 
       await api.post('/booking', submitData)
@@ -229,7 +265,7 @@ const Bookings = () => {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -237,6 +273,19 @@ const Bookings = () => {
       minute: '2-digit'
     })
   }
+
+  const filterTime = (time) => {
+    const now = new Date();
+    const selectedDate = new Date(time);
+    const isToday = selectedDate.toDateString() === now.toDateString();
+
+    if (isToday && selectedDate.getTime() < now.getTime() + 60 * 60 * 1000) {
+      return false;
+    }
+
+    const hour = selectedDate.getHours();
+    return hour >= 8 && hour < 20;
+  };
 
   const canCreate = user?.role === 'customer' || user?.role === 'admin'
   const canUpdateStatus = user?.role === 'admin' || user?.role === 'cashier'
@@ -280,7 +329,7 @@ const Bookings = () => {
                 >
                   <option value="">All Status</option>
                   <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
+                  {/*<option value="confirmed">Confirmed</option>*/}
                   <option value="on progress">On Progress</option>
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
@@ -324,7 +373,7 @@ const Bookings = () => {
                         <div className="d-flex align-items-center">
                           <i className="fas fa-calendar-check fa-2x text-primary me-3"></i>
                           <div>
-                            <div className="fw-bold">{booking.vehicle_id}</div>
+                            <div className="fw-bold">{booking.Vehicle.model}</div>
                           </div>
                         </div>
                       </td>
@@ -411,13 +460,20 @@ const Bookings = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Booking Date *</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    name="booking_date"
-                    value={formData.booking_date}
-                    onChange={handleChange}
-                    required
-                  />
+                  <div>
+                    <DatePicker
+                      selected={formData.booking_date}
+                      onChange={handleDateChange}
+                      showTimeSelect
+                      filterTime={filterTime}
+                      minDate={new Date()}
+                      dateFormat="MMMM d, yyyy h:mm aa"
+                      className="form-control"
+                      wrapperClassName="w-100"
+                      popperPlacement="top-end"
+                      required
+                    />
+                  </div>
                 </Form.Group>
               </Col>
             </Row>
@@ -432,7 +488,7 @@ const Bookings = () => {
                     id={`service-${service.id}`}
                     name="service_ids"
                     value={service.id}
-                    label={`${service.name} - $${service.price}`}
+                    label={`${service.name}`}
                     onChange={handleChange}
                     className="mb-2"
                   />
@@ -481,8 +537,9 @@ const Bookings = () => {
                 onChange={handleStatusChange}
                 required
               >
+                <option value="">All Status</option>
                 <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
+                {/*<option value="confirmed">Confirmed</option>*/}
                 <option value="on progress">On Progress</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>

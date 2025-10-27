@@ -150,7 +150,7 @@ const Dashboard = () => {
                 {recentBookings.map((booking) => (
                   <tr key={booking.id}>
                     <td>{formatDate(booking.booking_date)}</td>
-                    <td>{booking.vehicle_id}</td>
+                    <td>{booking.Vehicle.model}</td>
                     <td>{getStatusBadge(booking.status)}</td>
                     <td>{booking.notes || '-'}</td>
                   </tr>

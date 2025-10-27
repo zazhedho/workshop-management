@@ -3,6 +3,7 @@ package booking
 import (
 	"time"
 	"workshop-management/internal/domain/service"
+	"workshop-management/internal/domain/vehicle"
 
 	"gorm.io/gorm"
 )
@@ -27,6 +28,7 @@ type Booking struct {
 	DeletedBy string         `json:"-"`
 
 	Services []service.Service `json:"services,omitempty" gorm:"many2many:booking_services;"`
+	Vehicle  vehicle.Vehicle   `gorm:"foreignKey:VehicleId"`
 }
 
 // BookService entity (join table)
