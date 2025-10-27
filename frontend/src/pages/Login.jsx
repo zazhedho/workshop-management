@@ -74,19 +74,14 @@ const Login = () => {
     if (result.success) {
       navigate('/dashboard')
     } else {
-      let errorMessage = result.error || 'Login failed'
-
-      if (errorMessage.toLowerCase().includes('unauthorized') ||
-          errorMessage.toLowerCase().includes('invalid credentials') ||
-          errorMessage.toLowerCase().includes('wrong password')) {
-        errorMessage = 'Invalid email or password. Please try again.'
-      } else if (errorMessage.toLowerCase().includes('network')) {
-        errorMessage = 'Network error. Please check your connection and try again.'
-      } else if (errorMessage.toLowerCase().includes('user not found')) {
-        errorMessage = 'No account found with this email address.'
+      const errorPayload = result.error
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else if (errorPayload) {
+        setError(String(errorPayload))
+      } else {
+        setError('Login failed')
       }
-
-      setError(errorMessage)
     }
 
     setLoading(false)

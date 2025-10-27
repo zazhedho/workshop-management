@@ -54,7 +54,14 @@ const Profile = () => {
         confirmPassword: ''
       }))
     } else {
-      setError(result.error)
+      const errorPayload = result.error
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else if (errorPayload) {
+        setError(String(errorPayload))
+      } else {
+        setError('Profile update failed')
+      }
     }
     
     setLoading(false)

@@ -26,8 +26,9 @@ const Services = () => {
   }, [currentPage, search])
 
   const fetchServices = async () => {
+    setLoading(true)
+    setError('')
     try {
-      setLoading(true)
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
@@ -37,9 +38,15 @@ const Services = () => {
       const response = await api.get(`/services?${params}`)
       setServices(response.data.data || [])
       setTotalPages(response.data.total_pages || 1)
-    } catch (error) {
-      console.error('Failed to fetch services:', error)
-      setError('Failed to fetch services')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to fetch services.')
+      }
+      setServices([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
@@ -103,8 +110,13 @@ const Services = () => {
       setTimeout(() => {
         handleCloseModal()
       }, 1500)
-    } catch (error) {
-      setError(error.response?.data?.error || 'Operation failed')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Operation failed.')
+      }
     }
   }
 
@@ -115,8 +127,13 @@ const Services = () => {
         setSuccess('Service deleted successfully')
         fetchServices()
         setTimeout(() => setSuccess(''), 3000)
-      } catch (error) {
-        setError(error.response?.data?.error || 'Delete failed')
+      } catch (err) {
+        const errorPayload = err.response?.data || err
+        if (errorPayload && errorPayload.message) {
+          setError(errorPayload.message)
+        } else {
+          setError('Delete failed.')
+        }
         setTimeout(() => setError(''), 3000)
       }
     }
@@ -266,7 +283,7 @@ const Services = () => {
               )}
             </>
           ) : (
-            <p className="text-muted text-center py-4">No services found</p>
+            !error && <p className="text-muted text-center py-4">No services found</p>
           )}
         </Card.Body>
       </Card>

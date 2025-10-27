@@ -39,8 +39,9 @@ const Bookings = () => {
   }, [currentPage, search, filters])
 
   const fetchBookings = async () => {
+    setLoading(true)
+    setError('')
     try {
-      setLoading(true)
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
@@ -51,9 +52,15 @@ const Bookings = () => {
       const response = await api.get(`/bookings?${params}`)
       setBookings(response.data.data || [])
       setTotalPages(response.data.total_pages || 1)
-    } catch (error) {
-      console.error('Failed to fetch bookings:', error)
-      setError('Failed to fetch bookings')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to fetch bookings.')
+      }
+      setBookings([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
@@ -63,8 +70,13 @@ const Bookings = () => {
     try {
       const response = await api.get('/vehicles?limit=100')
       setVehicles(response.data.data || [])
-    } catch (error) {
-      console.error('Failed to fetch vehicles:', error)
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to fetch vehicles.')
+      }
     }
   }
 
@@ -72,8 +84,13 @@ const Bookings = () => {
     try {
       const response = await api.get('/services?limit=100')
       setServices(response.data.data || [])
-    } catch (error) {
-      console.error('Failed to fetch services:', error)
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to fetch services.')
+      }
     }
   }
 
@@ -157,8 +174,13 @@ const Bookings = () => {
       setTimeout(() => {
         handleCloseModal()
       }, 1500)
-    } catch (error) {
-      setError(error.response?.data?.error || 'Operation failed')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Operation failed.')
+      }
     }
   }
 
@@ -175,8 +197,13 @@ const Bookings = () => {
       setTimeout(() => {
         handleCloseStatusModal()
       }, 1500)
-    } catch (error) {
-      setError(error.response?.data?.error || 'Status update failed')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Status update failed.')
+      }
     }
   }
 
@@ -347,7 +374,7 @@ const Bookings = () => {
               )}
             </>
           ) : (
-            <p className="text-muted text-center py-4">No bookings found</p>
+            !error && <p className="text-muted text-center py-4">No bookings found</p>
           )}
         </Card.Body>
       </Card>

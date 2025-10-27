@@ -28,8 +28,9 @@ const Vehicles = () => {
   }, [currentPage, search])
 
   const fetchVehicles = async () => {
+    setLoading(true)
+    setError('')
     try {
-      setLoading(true)
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
@@ -39,9 +40,15 @@ const Vehicles = () => {
       const response = await api.get(`/vehicles?${params}`)
       setVehicles(response.data.data || [])
       setTotalPages(response.data.total_pages || 1)
-    } catch (error) {
-      console.error('Failed to fetch vehicles:', error)
-      setError('Failed to fetch vehicles')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to fetch vehicles.')
+      }
+      setVehicles([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
@@ -104,8 +111,13 @@ const Vehicles = () => {
       setTimeout(() => {
         handleCloseModal()
       }, 1500)
-    } catch (error) {
-      setError(error.response?.data?.error || 'Operation failed')
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Operation failed.')
+      }
     }
   }
 
@@ -116,8 +128,13 @@ const Vehicles = () => {
         setSuccess('Vehicle deleted successfully')
         fetchVehicles()
         setTimeout(() => setSuccess(''), 3000)
-      } catch (error) {
-        setError(error.response?.data?.error || 'Delete failed')
+      } catch (err) {
+        const errorPayload = err.response?.data || err
+        if (errorPayload && errorPayload.message) {
+          setError(errorPayload.message)
+        } else {
+          setError('Delete failed.')
+        }
         setTimeout(() => setError(''), 3000)
       }
     }
@@ -264,7 +281,7 @@ const Vehicles = () => {
               )}
             </>
           ) : (
-            <p className="text-muted text-center py-4">No vehicles found</p>
+            !error && <p className="text-muted text-center py-4">No vehicles found</p>
           )}
         </Card.Body>
       </Card>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Table, Button, Badge, Form, Row, Col, Pagination } from 'react-bootstrap'
+import { Card, Table, Button, Badge, Form, Row, Col, Pagination, Alert } from 'react-bootstrap'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -7,6 +7,7 @@ const Users = () => {
   const { user } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [search, setSearch] = useState('')
@@ -19,8 +20,9 @@ const Users = () => {
   }, [currentPage, search, filters])
 
   const fetchUsers = async () => {
+    setLoading(true)
+    setError('')
     try {
-      setLoading(true)
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
@@ -31,8 +33,15 @@ const Users = () => {
       const response = await api.get(`/users?${params}`)
       setUsers(response.data.data || [])
       setTotalPages(response.data.total_pages || 1)
-    } catch (error) {
-      console.error('Failed to fetch users:', error)
+    } catch (err) {
+      const errorPayload = err.response?.data || err
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else {
+        setError('Failed to fetch users.')
+      }
+      setUsers([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
@@ -84,6 +93,8 @@ const Users = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Users Management</h2>
       </div>
+
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {/* Filters */}
       <Card className="mb-4">
@@ -189,7 +200,7 @@ const Users = () => {
               )}
             </>
           ) : (
-            <p className="text-muted text-center py-4">No users found</p>
+            !error && <p className="text-muted text-center py-4">No users found</p>
           )}
         </Card.Body>
       </Card>

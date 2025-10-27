@@ -91,16 +91,14 @@ const Register = () => {
         state: { message: 'Registration successful! Please login.' }
       })
     } else {
-      let errorMessage = result.error || 'Registration failed'
-
-      if (errorMessage.toLowerCase().includes('email already exists') ||
-          errorMessage.toLowerCase().includes('duplicate')) {
-        errorMessage = 'An account with this email already exists. Please use a different email or try logging in.'
-      } else if (errorMessage.toLowerCase().includes('network')) {
-        errorMessage = 'Network error. Please check your connection and try again.'
+      const errorPayload = result.error
+      if (errorPayload && errorPayload.message) {
+        setError(errorPayload.message)
+      } else if (errorPayload) {
+        setError(String(errorPayload))
+      } else {
+        setError('Registration failed')
       }
-
-      setError(errorMessage)
     }
 
     setLoading(false)
