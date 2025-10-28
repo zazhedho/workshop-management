@@ -10,6 +10,7 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
     { path: '/bookings', icon: 'fas fa-calendar-check', label: 'Bookings' },
+    { path: '/work-orders', icon: 'fas fa-clipboard-list', label: 'Work Orders' },
     { path: '/vehicles', icon: 'fas fa-car', label: 'Vehicles' },
     { path: '/services', icon: 'fas fa-tools', label: 'Services' },
   ]
