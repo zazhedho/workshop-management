@@ -47,7 +47,7 @@ func (h *HandlerWorkOrder) Fetch(ctx *gin.Context) {
 
 	userId := utils.InterfaceString(authData["user_id"])
 	if utils.InterfaceString(authData["role"]) == utils.RoleCustomer {
-		params.Filters["user_id"] = userId
+		params.Filters["customer_id"] = userId
 	}
 
 	data, totalData, err := h.Service.Fetch(params)
