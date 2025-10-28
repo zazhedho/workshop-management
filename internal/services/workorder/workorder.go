@@ -6,6 +6,7 @@ import (
 	"workshop-management/internal/domain/booking"
 	"workshop-management/internal/domain/workorder"
 	"workshop-management/internal/dto"
+	"workshop-management/pkg/filter"
 	"workshop-management/utils"
 )
 
@@ -28,7 +29,7 @@ func (s *ServiceWorkOrder) CreateFromBooking(bookingId, userId string) (workorde
 	}
 
 	// validate booking status
-	if bookingData.Status != utils.StsOnProgress {
+	if bookingData.Status != utils.StsConfirmed {
 		return workorder.WorkOrder{}, errors.New("can't create work order")
 	}
 
@@ -98,4 +99,8 @@ func (s *ServiceWorkOrder) UpdateStatus(workOrderId, status, userId string) (int
 	}
 
 	return s.WorkOrderRepo.Update(workorder.WorkOrder{Id: workOrderId}, data)
+}
+
+func (s *ServiceWorkOrder) Fetch(params filter.BaseParams) ([]workorder.WorkOrder, int64, error) {
+	return s.WorkOrderRepo.Fetch(params)
 }

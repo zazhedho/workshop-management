@@ -138,6 +138,8 @@ func (r *Routes) WorkOrderRoutes() {
 	h := workorderHandler.NewWorkOrderHandler(uc)
 	mdw := middlewares.NewMiddleware(authRepo.NewBlacklistRepo(r.DB))
 
+	r.App.GET("/api/workorders", mdw.AuthMiddleware(), h.Fetch)
+
 	workorder := r.App.Group("/api/workorder").Use(mdw.AuthMiddleware())
 	{
 		workorder.POST("/from-booking/:id", mdw.RoleMiddleware(utils.RoleAdmin, utils.RoleCashier), h.CreateFromBooking)

@@ -1,7 +1,9 @@
 package workorder
 
 import (
+	"fmt"
 	"workshop-management/internal/domain/workorder"
+	"workshop-management/pkg/filter"
 
 	"gorm.io/gorm"
 )
@@ -51,4 +53,61 @@ func (r *repo) Update(m workorder.WorkOrder, data map[string]interface{}) (int64
 	}
 
 	return res.RowsAffected, nil
+}
+
+func (r *repo) Fetch(params filter.BaseParams) (ret []workorder.WorkOrder, totalData int64, err error) {
+	query := r.DB.Model(&workorder.WorkOrder{}).Preload("Services", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id, work_order_id, service_id, service_name, price, quantity")
+	}).Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id, name, email, phone")
+	}).Preload("Vehicle", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id, model, license_plate")
+	})
+
+	if params.Search != "" {
+		query = query.Where("LOWER(notes) LIKE LOWER(?) OR LOWER(status) LIKE LOWER(?)", "%"+params.Search+"%", "%"+params.Search+"%")
+	}
+
+	for key, value := range params.Filters {
+		if value == nil {
+			continue
+		}
+
+		switch v := value.(type) {
+		case string:
+			if v == "" {
+				continue
+			}
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		case []string, []int:
+			query = query.Where(fmt.Sprintf("%s IN ?", key), v)
+		default:
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		}
+	}
+
+	if err = query.Count(&totalData).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if params.OrderBy != "" && params.OrderDirection != "" {
+		validColumns := map[string]bool{
+			"booking_date": true,
+			"status":       true,
+			"created_at":   true,
+			"updated_at":   true,
+		}
+
+		if _, ok := validColumns[params.OrderBy]; !ok {
+			return nil, 0, fmt.Errorf("invalid orderBy column: %s", params.OrderBy)
+		}
+
+		query = query.Order(fmt.Sprintf("%s %s", params.OrderBy, params.OrderDirection))
+	}
+
+	if err = query.Offset(params.Offset).Limit(params.Limit).Find(&ret).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return ret, totalData, nil
 }

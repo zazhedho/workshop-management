@@ -160,6 +160,7 @@ const Services = () => {
   }
 
   const canModify = user?.role === 'admin'
+  const showCreatedAt = user?.role !== 'customer'
 
   return (
     <div>
@@ -215,7 +216,7 @@ const Services = () => {
                     <th>Service Name</th>
                     <th>Description</th>
                     <th>Price</th>
-                    <th>Created At</th>
+                    {showCreatedAt && <th>Created At</th>}
                     {canModify && <th>Actions</th>}
                   </tr>
                 </thead>
@@ -232,7 +233,7 @@ const Services = () => {
                       </td>
                       <td>{service.description || '-'}</td>
                       <td className="fw-bold text-success">{formatPrice(service.price)}</td>
-                      <td>{formatDate(service.created_at)}</td>
+                      {showCreatedAt && <td>{formatDate(service.created_at)}</td>}
                       {canModify && (
                         <td>
                           <Button

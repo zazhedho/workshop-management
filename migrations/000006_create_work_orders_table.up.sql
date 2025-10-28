@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS work_orders (
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(50) NOT NULL,
     updated_at TIMESTAMP DEFAULT NOW(),
     updated_by VARCHAR(50),
     deleted_at TIMESTAMP NULL,

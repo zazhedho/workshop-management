@@ -21,7 +21,7 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="sidebar p-3">
+    <div className="p-3">
       <div className="text-center mb-4">
         <h4 className="text-white mb-0">
           <i className="fas fa-wrench me-2"></i>

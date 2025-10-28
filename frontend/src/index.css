@@ -1,12 +1,9 @@
+/* General Body & Root Styles */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -16,12 +13,13 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
   background-color: #f8f9fa;
   color: #212529;
+}
+
+/* Prevent body scroll when mobile sidebar is open */
+body.sidebar-is-open {
+  overflow: hidden;
 }
 
 #root {
@@ -31,12 +29,32 @@ body {
   text-align: left;
 }
 
-.sidebar {
+/* New Layout System */
+.layout-wrapper {
+  display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  z-index: 1020; /* Higher than overlay */
+  transition: transform 0.3s ease-in-out;
+}
+
+.main-container {
+  flex-grow: 1;
+  min-width: 0; /* Prevents flexbox overflow issues */
+  background-color: #f8f9fa;
+}
+
+.sidebar-overlay {
+  display: none; /* Hidden by default */
+}
+
+/* Sidebar Menu Links */
 .sidebar .nav-link {
   color: rgba(255, 255, 255, 0.8);
   padding: 12px 20px;
@@ -52,11 +70,45 @@ body {
   transform: translateX(5px);
 }
 
-.main-content {
-  background-color: #f8f9fa;
-  min-height: 100vh;
+/* Mobile-specific styles */
+@media (max-width: 767.98px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%); /* Hidden off-screen */
+  }
+
+  .layout-wrapper.sidebar-open .sidebar {
+    transform: translateX(0); /* Slide in */
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1010; /* Below sidebar, above content */
+    display: none;
+  }
+
+  .layout-wrapper.sidebar-open .sidebar-overlay {
+    display: block; /* Show overlay when sidebar is open */
+  }
 }
 
+/* Desktop-specific styles */
+@media (min-width: 768px) {
+  .layout-wrapper {
+    /* On desktop, the sidebar is part of the flow */
+  }
+}
+
+
+/* Component Styles (Card, Button, etc.) - Largely unchanged */
 .card {
   border: none;
   border-radius: 12px;
@@ -97,13 +149,8 @@ body {
   padding: 15px;
 }
 
-.table tbody tr {
-  transition: all 0.2s ease;
-}
-
 .table tbody tr:hover {
   background-color: rgba(102, 126, 234, 0.05);
-  transform: scale(1.01);
 }
 
 .badge {
@@ -122,6 +169,7 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
 
+/* Login Page Styles */
 .login-container {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
@@ -139,6 +187,7 @@ body {
   max-width: 400px;
 }
 
+/* Dashboard Stats Card */
 .stats-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -150,24 +199,4 @@ body {
 .stats-icon {
   font-size: 2.5rem;
   opacity: 0.8;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: -250px;
-    width: 250px;
-    height: 100vh;
-    z-index: 1000;
-    transition: left 0.3s ease;
-  }
-  
-  .sidebar.show {
-    left: 0;
-  }
-  
-  .main-content {
-    margin-left: 0;
-  }
 }

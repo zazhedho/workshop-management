@@ -1,38 +1,55 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Container, Row, Col } from 'react-bootstrap'
+import { Container } from 'react-bootstrap'
 import Sidebar from './Sidebar'
 import Header from './Header'
 
 const Layout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isSidebarOpen, setSidebarOpen] = useState(false)
 
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
+    setSidebarOpen(!isSidebarOpen)
   }
+
+  // Add/remove a class on the body to prevent scrolling when the sidebar is open
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add('sidebar-is-open')
+    } else {
+      document.body.classList.remove('sidebar-is-open')
+    }
+    // Cleanup function
+    return () => {
+      document.body.classList.remove('sidebar-is-open')
+    }
+  }, [isSidebarOpen])
 
   const currentYear = new Date().getFullYear();
   const copyrightYear = currentYear > 2018 ? `2018-${currentYear}` : '2018';
 
   return (
-    <Container fluid className="p-0">
-      <Row className="g-0" style={{ minHeight: '100vh' }}>
-        <Col md={3} lg={2} className={`sidebar ${sidebarOpen ? 'show' : ''}`}>
-          <Sidebar />
-        </Col>
-        <Col md={9} lg={10} className="main-content d-flex flex-column">
-          <Header toggleSidebar={toggleSidebar} />
-          <Container fluid className="p-4 flex-grow-1">
+    <div className={`layout-wrapper ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      <aside className="sidebar">
+        <Sidebar />
+      </aside>
+
+      {/* Overlay for mobile, closes sidebar on click */}
+      <div className="sidebar-overlay" onClick={toggleSidebar}></div>
+
+      <div className="main-container d-flex flex-column">
+        <Header toggleSidebar={toggleSidebar} />
+        <main className="main-content flex-grow-1">
+          <Container fluid className="p-4">
             <Outlet />
           </Container>
-          <footer className="footer mt-auto py-3 bg-light">
-            <div className="container text-center">
-              <span className="text-muted">© {copyrightYear} ZZ Family | <a href="https://www.linkedin.com/in/zaidus-zhuhur/" target="_blank" rel="noopener noreferrer">Help Center</a></span>
-            </div>
-          </footer>
-        </Col>
-      </Row>
-    </Container>
+        </main>
+        <footer className="footer mt-auto py-3 bg-light">
+          <div className="container text-center">
+            <span className="text-muted">© {copyrightYear} ZZ Family | <a href="https://www.linkedin.com/in/zaidus-zhuhur/" target="_blank" rel="noopener noreferrer">Help Center</a></span>
+          </div>
+        </footer>
+      </div>
+    </div>
   )
 }
 

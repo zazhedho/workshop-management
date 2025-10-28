@@ -84,6 +84,14 @@ func (s *ServiceBooking) UpdateStatus(id, userId, role string, req dto.UpdateBoo
 				data = utils.UpdateStatus(userId, newStatus)
 			}
 		case utils.RoleAdmin, utils.RoleCashier:
+			if newStatus == utils.StsConfirmed || newStatus == utils.StsCancelled {
+				data = utils.UpdateStatus(userId, newStatus)
+			}
+		}
+
+	case utils.StsConfirmed:
+		switch role {
+		case utils.RoleAdmin, utils.RoleCashier:
 			if newStatus == utils.StsOnProgress || newStatus == utils.StsCancelled {
 				data = utils.UpdateStatus(userId, newStatus)
 			}

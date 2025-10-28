@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"workshop-management/internal/domain/workorder"
 	"workshop-management/internal/dto"
-	"workshop-management/internal/services/workorder"
+	"workshop-management/pkg/filter"
 	"workshop-management/pkg/logger"
 	"workshop-management/pkg/messages"
 	"workshop-management/pkg/response"
@@ -17,13 +18,57 @@ import (
 )
 
 type HandlerWorkOrder struct {
-	Service *workorder.ServiceWorkOrder
+	Service workorder.Service
 }
 
-func NewWorkOrderHandler(s *workorder.ServiceWorkOrder) *HandlerWorkOrder {
+func NewWorkOrderHandler(s workorder.Service) *HandlerWorkOrder {
 	return &HandlerWorkOrder{
 		Service: s,
 	}
+}
+
+// Fetch godoc
+// @Summary Get all work orders
+// @Description Get all work orders
+// @Tags Work Orders
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Success
+// @Failure 500 {object} response.Error
+// @Router /workorders [get]
+// @Security Bearer
+func (h *HandlerWorkOrder) Fetch(ctx *gin.Context) {
+	logId := utils.GenerateLogId(ctx)
+	logPrefix := fmt.Sprintf("[%s][WorkOrderHandler][Fetch]", logId)
+	authData := utils.GetAuthData(ctx)
+
+	params, _ := filter.GetBaseParams(ctx, "updated_at", "desc", 10)
+	params.Filters = filter.WhitelistFilter(params.Filters, []string{"status"})
+
+	userId := utils.InterfaceString(authData["user_id"])
+	if utils.InterfaceString(authData["role"]) == utils.RoleCustomer {
+		params.Filters["user_id"] = userId
+	}
+
+	data, totalData, err := h.Service.Fetch(params)
+	if err != nil {
+		logger.WriteLog(logger.LogLevelError, fmt.Sprintf("%s; Fetch; Error: %+v", logPrefix, err))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			res := response.Response(http.StatusNotFound, messages.NotFound, logId, nil)
+			res.Error = "work order not found"
+			ctx.JSON(http.StatusNotFound, res)
+			return
+		}
+
+		res := response.Response(http.StatusInternalServerError, messages.MsgFail, logId, nil)
+		res.Error = err.Error()
+		ctx.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := response.PaginationResponse(http.StatusOK, int(totalData), params.Page, params.Limit, logId, data)
+	logger.WriteLog(logger.LogLevelDebug, fmt.Sprintf("%s; Response: %+v;", logPrefix, utils.JsonEncode(data)))
+	ctx.JSON(http.StatusOK, res)
 }
 
 // CreateFromBooking godoc
